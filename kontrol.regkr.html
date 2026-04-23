@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link href="style.css" rel="stylesheet">
+    <!-- Подключение Chart.js для графиков -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <title>Контроль режимов гидрокрекинга</title>
+    <style>
+        /* Дополнительные стили для страницы контроля режимов */
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .param-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .param-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .param-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .param-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .param-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #95a5a6;
+        }
+        
+        .status-normal { background-color: #2ecc71; }
+        .status-warning { background-color: #f39c12; }
+        .status-critical { background-color: #e74c3c; animation: pulse 1.5s infinite; }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .param-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .param-unit {
+            font-size: 0.5em;
+            color: #7f8c8d;
+            margin-left: 5px;
+        }
+        
+        .param-limits {
+            font-size: 0.85em;
+            color: #7f8c8d;
+            margin-top: 10px;
+        }
+        
+        .param-progress {
+            width: 100%;
+            height: 8px;
+            background-color: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+        
+        .chart-container {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .events-log {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .events-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .event-item {
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 5px;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+        }
+        
+        .event-time {
+            color: #7f8c8d;
+            margin-right: 15px;
+            font-family: monospace;
+        }
+        
+        .event-normal { background-color: #d5f5e3; border-left: 3px solid #2ecc71; }
+        .event-warning { background-color: #fef5e7; border-left: 3px solid #f39c12; }
+        .event-critical { background-color: #fadbd8; border-left: 3px solid #e74c3c; }
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .product-item {
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .product-name {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .product-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .control-panel {
+            background: #f0f0f0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .last-update {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        
+        .refresh-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+        
+        .refresh-btn:hover {
+            background: #2980b9;
+        }
+        
+        .summary-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .badge-normal { background: #2ecc71; color: white; }
+        .badge-warning { background: #f39c12; color: white; }
+        .badge-critical { background: #e74c3c; color: white; }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Контроль режимов гидрокрекинга</h1>
+<div id="nav">
+    <ul>
+        <li title="Главная страница"><a href="ARM.ustanovka.gidrokrekinga.html">🏠 Главная</a></li>
+        <li title="Контроль температуры"><a href="kontrol.temperaturi.html">🌡️ Температура</a></li>
+        <li title="Контроль давления"><a href="kontrol.davlenia.html">⚡ Давление</a></li>
+        <li title="Контроль водорода"><a href="kontrol.vodoroda.html">💧 Водород</a></li>
+        <li title="Получение фракций"><a href="kontrol.fraction.html">📊 Фракции</a></li>
+        <li title="Контроль режимов"><a href="kontrol.regkr.html" style="font-weight: bold; background: #3498db; color: white;">📈 Режимы</a></li>
+        <li title="Отчёты и логирование"><a href="reports.html">📋 Отчёты</a></li>
+    </ul>
+</div>
+    
+    <div class="wrapper">
+        <div id="sidebar1" class="aside">
+            <div class="logo-sidebar">
+                <img src="financial-logo-abstract-finance-logo-vector.jpg" alt="Логотип" width="200" height="200" />
+            </div>
+        </div>
+        
+        <div id="sidebar2" class="aside">
+            <h2>В поисках сотрудников</h2>
+            <p>Мы расширяем команду и ищем ответственного и квалифицированного оператора установки гидрокрекинга!</p>
+            <h3>Требования:</h3>
+            <p>- Опыт работы на нефтеперерабатывающих предприятиях или аналогичных производствах</p>
+            <p>- Знание технологических процессов гидрокрекинга</p>
+            <p>- Умение работать с контрольно-измерительными приборами и автоматизированными системами управления</p>
+            <p>- Ответственность, внимательность, готовность работать в команде</p>
+            <h3>Условия:</h3>
+            <p>- Стабильная заработная плата (обсуждается на собеседовании)</p>
+            <p>- Официальное трудоустройство</p>
+            <p>- Возможность профессионального роста</p>
+            <p>- Социальный пакет</p>
+        </div>
+        
+        <div id="article">
+            <h2>Сводный контроль технологических режимов</h2>
+            
+            <!-- Панель управления -->
+            <div class="control-panel">
+                <div>
+                    <strong>Текущий режим:</strong> 
+                    <span id="current-mode">Жёсткий гидрокрекинг</span>
+                </div>
+                <div class="last-update" id="last-update">
+                    Последнее обновление: --:--:--
+                </div>
+            </div>
+            
+            <!-- Сводка по продуктам -->
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">Выход продуктов</h3>
+                <div class="products-grid">
+                    <div class="product-item">
+                        <div class="product-name">Газ С1-С4</div>
+                        <div class="product-value" id="gas-c1c4">--%</div>
+                    </div>
+                    <div class="product-item">
+                        <div class="product-name">Бутан</div>
+                        <div class="product-value" id="butane">--%</div>
+                    </div>
+                    <div class="product-item">
+                        <div class="product-name">Бензин</div>
+                        <div class="product-value" id="gasoline-reg">--%</div>
+                    </div>
+                    <div class="product-item">
+                        <div class="product-name">Керосин</div>
+                        <div class="product-value" id="kerosene-reg">--%</div>
+                    </div>
+                    <div class="product-item">
+                        <div class="product-name">Диз. топливо</div>
+                        <div class="product-value" id="diesel">--%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Основные параметры -->
+            <div class="dashboard-container">
+                <!-- Температура -->
+                <div class="param-card" id="temp-card">
+                    <div class="param-header">
+                        <span class="param-name">🌡️ Температура</span>
+                        <span class="param-status" id="temp-status"></span>
+                    </div>
+                    <div class="param-value">
+                        <span id="temp-value">--</span><span class="param-unit">°C</span>
+                    </div>
+                    <div class="param-progress">
+                        <div class="progress-fill" id="temp-progress"></div>
+                    </div>
+                    <div class="param-limits" id="temp-limits">
+                        Норма: 350–365°C
+                    </div>
+                </div>
+                
+                <!-- Давление -->
+                <div class="param-card" id="press-card">
+                    <div class="param-header">
+                        <span class="param-name">⚡ Давление</span>
+                        <span class="param-status" id="press-status"></span>
+                    </div>
+                    <div class="param-value">
+                        <span id="press-value">--</span><span class="param-unit">МПа</span>
+                    </div>
+                    <div class="param-progress">
+                        <div class="progress-fill" id="press-progress"></div>
+                    </div>
+                    <div class="param-limits" id="press-limits">
+                        Норма: 3.0–4.0 МПа
+                    </div>
+                </div>
+                
+                <!-- Водород -->
+                <div class="param-card" id="h2-card">
+                    <div class="param-header">
+                        <span class="param-name">💧 Водород H₂</span>
+                        <span class="param-status" id="h2-status"></span>
+                    </div>
+                    <div class="param-value">
+                        <span id="h2-value">--</span><span class="param-unit">%</span>
+                    </div>
+                    <div class="param-progress">
+                        <div class="progress-fill" id="h2-progress"></div>
+                    </div>
+                    <div class="param-limits" id="h2-limits">
+                        Норма: 1.5–3.0%
+                    </div>
+                </div>
+                
+                <!-- Расход H2 -->
+                <div class="param-card" id="h2-consumption-card">
+                    <div class="param-header">
+                        <span class="param-name">📊 Расход H₂</span>
+                        <span class="param-status" id="h2-cons-status"></span>
+                    </div>
+                    <div class="param-value">
+                        <span id="h2-cons-value">--</span><span class="param-unit">м³/м³</span>
+                    </div>
+                    <div class="param-progress">
+                        <div class="progress-fill" id="h2-cons-progress"></div>
+                    </div>
+                    <div class="param-limits">
+                        Норма: 800–2000 м³/м³
+                    </div>
+                </div>
+                
+                <!-- Объёмная скорость -->
+                <div class="param-card" id="flow-card">
+                    <div class="param-header">
+                        <span class="param-name">🔄 Объёмная скорость</span>
+                        <span class="param-status" id="flow-status"></span>
+                    </div>
+                    <div class="param-value">
+                        <span id="flow-value">--</span><span class="param-unit">ч⁻¹</span>
+                    </div>
+                    <div class="param-progress">
+                        <div class="progress-fill" id="flow-progress"></div>
+                    </div>
+                    <div class="param-limits">
+                        Норма: 0.2–0.5 ч⁻¹
+                    </div>
+                </div>
+                
+                <!-- Конверсия -->
+                <div class="param-card" id="conversion-card">
+                    <div class="param-header">
+                        <span class="param-name">📈 Конверсия</span>
+                        <span class="param-status" id="conversion-status"></span>
+                    </div>
+                    <div class="param-value">
+                        <span id="conversion-value">--</span><span class="param-unit">%</span>
+                    </div>
+                    <div class="param-progress">
+                        <div class="progress-fill" id="conversion-progress"></div>
+                    </div>
+                    <div class="param-limits">
+                        Цель: 60–95%
+                    </div>
+                </div>
+            </div>
+            
+            <!-- График режимов -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 style="color: #2c3e50;">Динамика основных параметров</h3>
+                    <span style="color: #7f8c8d; font-size: 0.9em;">Обновление: 5 сек</span>
+                </div>
+                <canvas id="regime-chart" style="height: 300px;"></canvas>
+            </div>
+            
+            <!-- Журнал событий -->
+            <div class="events-log">
+                <div class="events-header">
+                    <h3 style="color: #2c3e50;">📋 Журнал событий</h3>
+                    <span style="color: #7f8c8d; font-size: 0.9em;" id="event-count">0 событий</span>
+                </div>
+                <div id="events-list">
+                    <div class="event-item event-normal">
+                        <span class="event-time">--:--:--</span>
+                        <span>Система запущена. Ожидание данных...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="ARM.ustanovka.gidrokrekinga.html" style="display: inline-block; margin-top: 20px;">Главная страница</a>
+        </div>
+    </div>
+    
+    <div id="footer">
+        <p>Contacts: viktor.petrov@pikely.ru</p>
+        <p>Copyright © Pikely.ru, 2026</p>
+    </div>
+
+    <script>
+        // Параметры режимов (из файлов PNG и PDF)
+        const PARAMS = {
+            temperature: { min: 350, max: 365, criticalLow: 345, criticalHigh: 370, unit: '°C' },
+            pressure: { min: 3.0, max: 4.0, criticalLow: 1.3, criticalHigh: 4.2, unit: 'МПа' },
+            hydrogen: { min: 1.5, max: 3.0, criticalLow: 1.0, criticalHigh: 4.0, unit: '%' },
+            h2Consumption: { min: 800, max: 2000, criticalLow: 500, criticalHigh: 2500, unit: 'м³/м³' },
+            flowRate: { min: 0.2, max: 0.5, criticalLow: 0.1, criticalHigh: 1.0, unit: 'ч⁻¹' },
+            conversion: { min: 60, max: 95, criticalLow: 50, criticalHigh: 98, unit: '%' }
+        };
+        
+        // Текущие значения
+        let currentValues = {
+            temperature: 358,
+            pressure: 3.5,
+            hydrogen: 2.3,
+            h2Consumption: 1400,
+            flowRate: 0.35,
+            conversion: 78
+        };
+        
+        // История для графика (последние 30 точек)
+        const maxHistory = 30;
+        const timeLabels = [];
+        const history = {
+            temperature: [],
+            pressure: [],
+            hydrogen: []
+        };
+        
+        // Журнал событий
+        let eventsLog = [];
+        const maxEvents = 20;
+        
+        // Инициализация графика
+        const ctx = document.getElementById('regime-chart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [
+                    {
+                        label: 'Температура (°C)',
+                        data: history.temperature,
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.05)',
+                        tension: 0.3,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Давление (МПа)',
+                        data: history.pressure,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.05)',
+                        tension: 0.3,
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: 'Водород (%)',
+                        data: history.hydrogen,
+                        borderColor: '#2ecc71',
+                        backgroundColor: 'rgba(46, 204, 113, 0.05)',
+                        tension: 0.3,
+                        yAxisID: 'y2'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index' },
+                plugins: {
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: { display: true, text: 'Температура (°C)' },
+                        min: 330,
+                        max: 420
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'Давление (МПа)' },
+                        min: 0,
+                        max: 6,
+                        grid: { drawOnChartArea: false }
+                    },
+                    y2: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'Водород (%)' },
+                        min: 0,
+                        max: 5,
+                        grid: { drawOnChartArea: false }
+                    }
+                }
+            }
+        });
+        
+        // Функция определения статуса
+        function getStatus(value, param) {
+            if (value < param.criticalLow || value > param.criticalHigh) return 'critical';
+            if (value < param.min || value > param.max) return 'warning';
+            return 'normal';
+        }
+        
+        // Функция обновления карточки параметра
+        function updateParamCard(id, value, param, displayName) {
+            const status = getStatus(value, param);
+            
+            // Обновляем значение
+            document.getElementById(`${id}-value`).textContent = value.toFixed(1);
+            
+            // Обновляем статус
+            const statusEl = document.getElementById(`${id}-status`);
+            statusEl.className = 'param-status';
+            if (status === 'normal') statusEl.classList.add('status-normal');
+            else if (status === 'warning') statusEl.classList.add('status-warning');
+            else statusEl.classList.add('status-critical');
+            
+            // Обновляем прогресс-бар
+            const progressEl = document.getElementById(`${id}-progress`);
+            let percentage = 0;
+            if (param.unit === 'м³/м³') {
+                percentage = ((value - 500) / 2000) * 100;
+            } else if (param.unit === 'ч⁻¹') {
+                percentage = (value / 1.0) * 100;
+            } else if (param.unit === '%' && id !== 'conversion') {
+                percentage = (value / 5) * 100;
+            } else if (param.unit === '°C') {
+                percentage = ((value - 330) / 90) * 100;
+            } else if (param.unit === 'МПа') {
+                percentage = (value / 5) * 100;
+            } else {
+                percentage = value;
+            }
+            progressEl.style.width = Math.min(100, Math.max(0, percentage)) + '%';
+            
+            if (status === 'normal') progressEl.style.backgroundColor = '#2ecc71';
+            else if (status === 'warning') progressEl.style.backgroundColor = '#f39c12';
+            else progressEl.style.backgroundColor = '#e74c3c';
+            
+            // Обновляем границы карточки
+            const card = document.getElementById(`${id}-card`);
+            if (status === 'normal') card.style.borderLeftColor = '#2ecc71';
+            else if (status === 'warning') card.style.borderLeftColor = '#f39c12';
+            else card.style.borderLeftColor = '#e74c3c';
+            
+            return status;
+        }
+        
+        // Функция добавления события в журнал
+        function addEvent(type, message) {
+            const now = new Date();
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            
+            eventsLog.unshift({ time: timeStr, type, message });
+            if (eventsLog.length > maxEvents) eventsLog.pop();
+            
+            // Обновляем отображение журнала
+            const eventsList = document.getElementById('events-list');
+            eventsList.innerHTML = '';
+            eventsLog.forEach(event => {
+                const eventEl = document.createElement('div');
+                eventEl.className = `event-item event-${event.type}`;
+                eventEl.innerHTML = `<span class="event-time">${event.time}</span><span>${event.message}</span>`;
+                eventsList.appendChild(eventEl);
+            });
+            
+            document.getElementById('event-count').textContent = `${eventsLog.length} событий`;
+        }
+        
+        // Генерация новых значений
+        function generateNewValues() {
+            const newValues = { ...currentValues };
+            
+            // Генерируем изменения для каждого параметра
+            newValues.temperature += (Math.random() - 0.5) * 3;
+            newValues.pressure += (Math.random() - 0.5) * 0.2;
+            newValues.hydrogen += (Math.random() - 0.5) * 0.15;
+            newValues.h2Consumption += (Math.random() - 0.5) * 50;
+            newValues.flowRate += (Math.random() - 0.5) * 0.03;
+            newValues.conversion += (Math.random() - 0.5) * 2;
+            
+            // Иногда добавляем резкие изменения
+            if (Math.random() < 0.03) {
+                newValues.temperature += (Math.random() - 0.5) * 15;
+                newValues.pressure += (Math.random() - 0.5) * 1.5;
+            }
+            
+            // Ограничиваем значения
+            newValues.temperature = Math.min(420, Math.max(330, newValues.temperature));
+            newValues.pressure = Math.min(5.5, Math.max(0.5, newValues.pressure));
+            newValues.hydrogen = Math.min(5.0, Math.max(0.5, newValues.hydrogen));
+            newValues.h2Consumption = Math.min(2500, Math.max(500, newValues.h2Consumption));
+            newValues.flowRate = Math.min(1.0, Math.max(0.1, newValues.flowRate));
+            newValues.conversion = Math.min(98, Math.max(50, newValues.conversion));
+            
+            return newValues;
+        }
+        
+        // Обновление продуктов
+        function updateProducts() {
+            const gasoline = (currentValues.conversion * 0.45).toFixed(1);
+            const kerosene = (currentValues.conversion * 0.25).toFixed(1);
+            const diesel = (currentValues.conversion * 0.20).toFixed(1);
+            const gas = (100 - currentValues.conversion * 0.9).toFixed(1);
+            const butane = (currentValues.conversion * 0.10).toFixed(1);
+            
+            document.getElementById('gasoline-reg').textContent = gasoline + '%';
+            document.getElementById('kerosene-reg').textContent = kerosene + '%';
+            document.getElementById('diesel').textContent = diesel + '%';
+            document.getElementById('gas-c1c4').textContent = gas + '%';
+            document.getElementById('butane').textContent = butane + '%';
+        }
+        
+        // Основная функция обновления
+        function updateRegimeData() {
+            // Генерируем новые значения
+            const newValues = generateNewValues();
+            const oldValues = { ...currentValues };
+            currentValues = newValues;
+            
+            // Обновляем карточки параметров
+            const tempStatus = updateParamCard('temp', newValues.temperature, PARAMS.temperature);
+            const pressStatus = updateParamCard('press', newValues.pressure, PARAMS.pressure);
+            const h2Status = updateParamCard('h2', newValues.hydrogen, PARAMS.hydrogen);
+            updateParamCard('h2-cons', newValues.h2Consumption, PARAMS.h2Consumption);
+            updateParamCard('flow', newValues.flowRate, PARAMS.flowRate);
+            updateParamCard('conversion', newValues.conversion, PARAMS.conversion);
+            
+            // Обновляем продукты
+            updateProducts();
+            
+            // Обновляем время
+            const now = new Date();
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            document.getElementById('last-update').textContent = `Последнее обновление: ${timeStr}`;
+            
+            // Добавляем в историю для графика
+            timeLabels.push(timeStr);
+            history.temperature.push(newValues.temperature);
+            history.pressure.push(newValues.pressure);
+            history.hydrogen.push(newValues.hydrogen);
+            
+            if (timeLabels.length > maxHistory) {
+                timeLabels.shift();
+                history.temperature.shift();
+                history.pressure.shift();
+                history.hydrogen.shift();
+            }
+            
+            chart.update();
+            
+            // Проверяем изменения статусов и добавляем события
+            if (tempStatus === 'critical' && getStatus(oldValues.temperature, PARAMS.temperature) !== 'critical') {
+                addEvent('critical', `🌡️ Критическая температура: ${newValues.temperature.toFixed(1)}°C`);
+            } else if (tempStatus === 'warning' && getStatus(oldValues.temperature, PARAMS.temperature) === 'normal') {
+                addEvent('warning', `🌡️ Температура вне нормы: ${newValues.temperature.toFixed(1)}°C`);
+            }
+            
+            if (pressStatus === 'critical' && getStatus(oldValues.pressure, PARAMS.pressure) !== 'critical') {
+                addEvent('critical', `⚡ Критическое давление: ${newValues.pressure.toFixed(2)} МПа`);
+            } else if (pressStatus === 'warning' && getStatus(oldValues.pressure, PARAMS.pressure) === 'normal') {
+                addEvent('warning', `⚡ Давление вне нормы: ${newValues.pressure.toFixed(2)} МПа`);
+            }
+            
+            if (h2Status === 'critical' && getStatus(oldValues.hydrogen, PARAMS.hydrogen) !== 'critical') {
+                addEvent('critical', `💧 Критическая концентрация H₂: ${newValues.hydrogen.toFixed(2)}%`);
+            } else if (h2Status === 'warning' && getStatus(oldValues.hydrogen, PARAMS.hydrogen) === 'normal') {
+                addEvent('warning', `💧 Концентрация H₂ вне нормы: ${newValues.hydrogen.toFixed(2)}%`);
+            }
+            
+            // Логирование
+            console.log(`[${timeStr}] Режим: T=${newValues.temperature.toFixed(1)}°C, P=${newValues.pressure.toFixed(2)}МПа, H2=${newValues.hydrogen.toFixed(2)}%, Конверсия=${newValues.conversion.toFixed(1)}%`);
+        }
+        
+        // Инициализация
+        function initialize() {
+            // Заполняем историю начальными данными
+            for (let i = 0; i < 10; i++) {
+                const values = generateNewValues();
+                currentValues = values;
+                
+                const now = new Date();
+                now.setSeconds(now.getSeconds() - (10 - i) * 5);
+                const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+                
+                timeLabels.push(timeStr);
+                history.temperature.push(values.temperature);
+                history.pressure.push(values.pressure);
+                history.hydrogen.push(values.hydrogen);
+            }
+            
+            chart.update();
+            updateRegimeData();
+            
+            addEvent('normal', '✅ Система контроля режимов запущена');
+            addEvent('normal', '📊 Начат сбор данных с датчиков');
+        }
+        
+        // Запуск
+        initialize();
+        
+        // Периодическое обновление (каждые 5 секунд)
+        setInterval(updateRegimeData, 5000);
+    </script>
+</body>
+</html>

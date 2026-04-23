@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link href="style.css" rel="stylesheet">
+    <!-- Подключение html2pdf.js для экспорта в PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <title>Отчёты установки гидрокрекинга</title>
+    <style>
+        /* Стили для страницы отчётов */
+        .reports-container {
+            margin: 20px 0;
+        }
+        
+        .report-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            border-bottom: 2px solid #3498db;
+            margin-bottom: 20px;
+        }
+        
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            color: #7f8c8d;
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+        
+        .tab-btn:hover {
+            color: #2c3e50;
+            background: #ecf0f1;
+        }
+        
+        .tab-btn.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+            font-weight: bold;
+        }
+        
+        .report-panel {
+            display: none;
+            background: #fff;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .report-panel.active {
+            display: block;
+        }
+        
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ecf0f1;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .report-title {
+            font-size: 1.5em;
+            color: #2c3e50;
+        }
+        
+        .report-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        .btn-success {
+            background: #2ecc71;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #27ae60;
+        }
+        
+        .btn-pdf {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-pdf:hover {
+            background: #c0392b;
+        }
+        
+        .btn-csv {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-csv:hover {
+            background: #219a52;
+        }
+        
+        .daily-report {
+            font-family: 'Courier New', monospace;
+        }
+        
+        .report-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            page-break-inside: avoid;
+        }
+        
+        .report-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #bdc3c7;
+            padding-bottom: 8px;
+        }
+        
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        .report-table th,
+        .report-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .report-table th {
+            background: #34495e;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .report-table tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .stat-unit {
+            font-size: 0.6em;
+            opacity: 0.8;
+        }
+        
+        .filter-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .filter-bar input,
+        .filter-bar select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        
+        .operator-info {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .status-normal { background: #2ecc71; color: white; }
+        .status-warning { background: #f39c12; color: white; }
+        .status-critical { background: #e74c3c; color: white; }
+        
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .loading-spinner {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Стили для PDF */
+        @media print {
+            .report-tabs, .report-actions, .filter-bar, #nav, #header, #footer, #sidebar1, #sidebar2, .no-print {
+                display: none !important;
+            }
+            .report-panel {
+                display: block !important;
+                box-shadow: none;
+                padding: 0;
+            }
+        }
+        
+        .pdf-export-container {
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Оверлей загрузки -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Формирование PDF-файла...</p>
+            <p style="font-size: 0.8em; color: #7f8c8d;">Пожалуйста, подождите</p>
+        </div>
+    </div>
+
+    <div id="header">
+        <h1>📊 Отчёты установки гидрокрекинга</h1>
+        <div id="nav">
+            <ul>
+                <li title="Главная страница"><a href="ARM.ustanovka.gidrokrekinga.html">🏠 Главная</a></li>
+                <li title="Контроль температуры"><a href="kontrol.temperaturi.html">🌡️ Температура</a></li>
+                <li title="Контроль давления"><a href="kontrol.davlenia.html">⚡ Давление</a></li>
+                <li title="Контроль водорода"><a href="kontrol.vodoroda.html">💧 Водород</a></li>
+                <li title="Получение фракций"><a href="kontrol.fraction.html">📊 Фракции</a></li>
+                <li title="Контроль режимов"><a href="kontrol.regkr.html">📈 Режимы</a></li>
+                <li title="Отчёты"><a href="#" style="font-weight: bold; background: #3498db; color: white;">📋 Отчёты</a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="wrapper">
+        <div id="sidebar1" class="aside">
+            <div class="logo-sidebar">
+                <img src="financial-logo-abstract-finance-logo-vector.jpg" alt="Логотип" width="200" height="200" />
+            </div>
+        </div>
+        
+        <div id="sidebar2" class="aside">
+            <h2>В поисках сотрудников</h2>
+            <p>Мы расширяем команду и ищем ответственного и квалифицированного оператора установки гидрокрекинга!</p>
+            <h3>Требования:</h3>
+            <p>- Опыт работы на нефтеперерабатывающих предприятиях</p>
+            <p>- Знание технологических процессов гидрокрекинга</p>
+            <p>- Умение работать с КИП и АСУ</p>
+            <h3>Условия:</h3>
+            <p>- Стабильная заработная плата</p>
+            <p>- Официальное трудоустройство</p>
+            <p>- Возможность профессионального роста</p>
+        </div>
+        
+        <div id="article">
+            <div class="reports-container">
+                <!-- Вкладки отчётов -->
+                <div class="report-tabs">
+                    <button class="tab-btn active" onclick="showReportTab('daily')">📋 Ежедневный отчёт</button>
+                    <button class="tab-btn" onclick="showReportTab('temperature')">🌡️ Лог температуры</button>
+                    <button class="tab-btn" onclick="showReportTab('pressure')">⚡ Лог давления</button>
+                    <button class="tab-btn" onclick="showReportTab('hydrogen')">💧 Лог водорода</button>
+                    <button class="tab-btn" onclick="showReportTab('fractions')">📊 Лог фракций</button>
+                    <button class="tab-btn" onclick="showReportTab('gases')">💨 Лог газов</button>
+                </div>
+                
+                <!-- Контейнер для экспорта в PDF -->
+                <div id="pdf-export-container">
+                
+                <!-- Ежедневный отчёт -->
+                <div id="daily-report" class="report-panel active">
+                    <div class="report-header">
+                        <div class="report-title">📋 Ежедневный отчёт установки гидрокрекинга</div>
+                        <div class="report-actions">
+                            <button class="btn btn-primary" onclick="generateDailyReport()">🔄 Сформировать</button>
+                            <button class="btn btn-pdf" onclick="exportToPDF('daily-report', 'Ежедневный_отчёт_гидрокрекинга')">📄 Экспорт PDF</button>
+                            <button class="btn btn-csv" onclick="exportToCSV('daily')">📥 Экспорт CSV</button>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-bar no-print">
+                        <label>Дата отчёта:</label>
+                        <input type="date" id="report-date" value="">
+                        <label>Смена:</label>
+                        <select id="report-shift">
+                            <option value="1">Смена №1 (00:00-08:00)</option>
+                            <option value="2" selected>Смена №2 (08:00-20:00)</option>
+                            <option value="3">Смена №3 (20:00-00:00)</option>
+                        </select>
+                        <label>Оператор:</label>
+                        <input type="text" id="report-operator" value="Петров В.П.">
+                    </div>
+                    
+                    <div id="daily-report-content">
+                        <!-- Содержимое генерируется динамически -->
+                    </div>
+                </div>
+                
+                <!-- Лог температуры -->
+                <div id="temperature-log" class="report-panel">
+                    <div class="report-header">
+                        <div class="report-title">🌡️ Лог температуры (каждые 10 минут)</div>
+                        <div class="report-actions">
+                            <button class="btn btn-pdf" onclick="exportToPDF('temperature-log', 'Лог_температуры')">📄 Экспорт PDF</button>
+                            <button class="btn btn-csv" onclick="exportToCSV('temperature')">📥 Экспорт CSV</button>
+                        </div>
+                    </div>
+                    <div class="filter-bar no-print">
+                        <label>Период:</label>
+                        <select id="temp-period">
+                            <option value="1">Последний час</option>
+                            <option value="6">6 часов</option>
+                            <option value="12">12 часов</option>
+                            <option value="24" selected>24 часа</option>
+                        </select>
+                        <label>Катализатор:</label>
+                        <select id="temp-catalyst-filter">
+                            <option value="all">Все типы</option>
+                            <option value="amorphous">Аморфный</option>
+                            <option value="zeolite">Цеолитсодержащий</option>
+                            <option value="combined">Совмещенный</option>
+                        </select>
+                    </div>
+                    <div id="temperature-log-content"></div>
+                </div>
+                
+                <!-- Лог давления -->
+                <div id="pressure-log" class="report-panel">
+                    <div class="report-header">
+                        <div class="report-title">⚡ Лог давления (каждые 5 минут)</div>
+                        <div class="report-actions">
+                            <button class="btn btn-pdf" onclick="exportToPDF('pressure-log', 'Лог_давления')">📄 Экспорт PDF</button>
+                            <button class="btn btn-csv" onclick="exportToCSV('pressure')">📥 Экспорт CSV</button>
+                        </div>
+                    </div>
+                    <div class="filter-bar no-print">
+                        <label>Период:</label>
+                        <select id="press-period">
+                            <option value="1">Последний час</option>
+                            <option value="6">6 часов</option>
+                            <option value="12">12 часов</option>
+                            <option value="24" selected>24 часа</option>
+                        </select>
+                        <label>Этап:</label>
+                        <select id="press-stage-filter">
+                            <option value="all">Все этапы</option>
+                            <option value="heating">Нагрев</option>
+                            <option value="reaction">Реакция</option>
+                            <option value="cooling">Охлаждение</option>
+                        </select>
+                    </div>
+                    <div id="pressure-log-content"></div>
+                </div>
+                
+                <!-- Лог водорода -->
+                <div id="hydrogen-log" class="report-panel">
+                    <div class="report-header">
+                        <div class="report-title">💧 Лог водорода (каждые 2 минуты)</div>
+                        <div class="report-actions">
+                            <button class="btn btn-pdf" onclick="exportToPDF('hydrogen-log', 'Лог_водорода')">📄 Экспорт PDF</button>
+                            <button class="btn btn-csv" onclick="exportToCSV('hydrogen')">📥 Экспорт CSV</button>
+                        </div>
+                    </div>
+                    <div class="filter-bar no-print">
+                        <label>Период:</label>
+                        <select id="h2-period">
+                            <option value="1">Последний час</option>
+                            <option value="6">6 часов</option>
+                            <option value="12">12 часов</option>
+                            <option value="24" selected>24 часа</option>
+                        </select>
+                    </div>
+                    <div id="hydrogen-log-content"></div>
+                </div>
+                
+                <!-- Лог фракций -->
+                <div id="fractions-log" class="report-panel">
+                    <div class="report-header">
+                        <div class="report-title">📊 Лог фракций (каждые 15 минут)</div>
+                        <div class="report-actions">
+                            <button class="btn btn-pdf" onclick="exportToPDF('fractions-log', 'Лог_фракций')">📄 Экспорт PDF</button>
+                            <button class="btn btn-csv" onclick="exportToCSV('fractions')">📥 Экспорт CSV</button>
+                        </div>
+                    </div>
+                    <div class="filter-bar no-print">
+                        <label>Период:</label>
+                        <select id="frac-period">
+                            <option value="6">6 часов</option>
+                            <option value="12">12 часов</option>
+                            <option value="24" selected>24 часа</option>
+                            <option value="168">7 дней</option>
+                        </select>
+                    </div>
+                    <div id="fractions-log-content"></div>
+                </div>
+                
+                <!-- Лог газов -->
+                <div id="gases-log" class="report-panel">
+                    <div class="report-header">
+                        <div class="report-title">💨 Лог углеводородных газов (каждые 10 минут)</div>
+                        <div class="report-actions">
+                            <button class="btn btn-pdf" onclick="exportToPDF('gases-log', 'Лог_газов')">📄 Экспорт PDF</button>
+                            <button class="btn btn-csv" onclick="exportToCSV('gases')">📥 Экспорт CSV</button>
+                        </div>
+                    </div>
+                    <div class="filter-bar no-print">
+                        <label>Период:</label>
+                        <select id="gas-period">
+                            <option value="6">6 часов</option>
+                            <option value="12">12 часов</option>
+                            <option value="24" selected>24 часа</option>
+                            <option value="168">7 дней</option>
+                        </select>
+                    </div>
+                    <div id="gases-log-content"></div>
+                </div>
+                
+                </div><!-- конец pdf-export-container -->
+            </div>
+            
+            <a href="ARM.ustanovka.gidrokrekinga.html" style="display: inline-block; margin-top: 20px;">← Вернуться на главную</a>
+        </div>
+    </div>
+    
+    <div id="footer">
+        <p>Contacts: viktor.petrov@pikely.ru</p>
+        <p>Copyright © Pikely.ru, 2026</p>
+    </div>
+
+    <script>
+        // Хранилище логов (имитация базы данных)
+        const logsDB = {
+            temperature: [],
+            pressure: [],
+            hydrogen: [],
+            fractions: [],
+            gases: []
+        };
+        
+        // Инициализация даты в фильтре
+        const today = new Date();
+        document.getElementById('report-date').value = today.toISOString().split('T')[0];
+        
+        // Функция переключения вкладок
+        function showReportTab(tabId) {
+            document.querySelectorAll('.report-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            const panel = document.getElementById(tabId + (tabId === 'daily' ? '-report' : '-log'));
+            if (panel) panel.classList.add('active');
+            
+            // Находим и активируем кнопку
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                const onclick = btn.getAttribute('onclick');
+                if (onclick && onclick.includes(`'${tabId}'`)) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            updateReportContent(tabId);
+        }
+        
+        // Генерация логов
+        function generateLogs(hours) {
+            const now = new Date();
+            
+            // Температура (каждые 10 минут)
+            logsDB.temperature = [];
+            for (let i = hours * 6; i >= 0; i--) {
+                const time = new Date(now - i * 10 * 60 * 1000);
+                const catalysts = ['amorphous', 'zeolite', 'combined'];
+                const catalyst = catalysts[Math.floor(Math.random() * catalysts.length)];
+                let temp;
+                if (catalyst === 'amorphous') temp = 390 + (Math.random() - 0.5) * 15;
+                else if (catalyst === 'zeolite') temp = 355 + (Math.random() - 0.5) * 20;
+                else temp = 385 + (Math.random() - 0.5) * 15;
+                
+                const limits = catalyst === 'amorphous' ? {min: 390, max: 400} :
+                              catalyst === 'zeolite' ? {min: 350, max: 365} :
+                              {min: 380, max: 397};
+                const status = temp < limits.min || temp > limits.max ? 'warning' : 'normal';
+                
+                logsDB.temperature.push({
+                    time: formatDateTime(time),
+                    catalyst: catalyst,
+                    value: temp.toFixed(1),
+                    status: status
+                });
+            }
+            
+            // Давление (каждые 5 минут)
+            logsDB.pressure = [];
+            const stages = ['heating', 'reaction', 'cooling'];
+            for (let i = hours * 12; i >= 0; i--) {
+                const time = new Date(now - i * 5 * 60 * 1000);
+                const stage = stages[Math.floor(Math.random() * stages.length)];
+                let pressure;
+                const limits = stage === 'heating' ? {min: 2.0, max: 3.5} :
+                              stage === 'reaction' ? {min: 3.0, max: 4.0} :
+                              {min: 1.5, max: 2.5};
+                pressure = limits.min + (limits.max - limits.min) * Math.random() + (Math.random() - 0.5) * 0.5;
+                
+                let status = 'normal';
+                if (pressure > 4.2 || pressure < 1.3) status = 'critical';
+                else if (pressure < limits.min || pressure > limits.max) status = 'warning';
+                
+                logsDB.pressure.push({
+                    time: formatDateTime(time),
+                    stage: stage,
+                    value: pressure.toFixed(2),
+                    status: status
+                });
+            }
+            
+            // Водород (каждые 2 минуты)
+            logsDB.hydrogen = [];
+            for (let i = hours * 30; i >= 0; i--) {
+                const time = new Date(now - i * 2 * 60 * 1000);
+                const h2 = 2.5 + (Math.random() - 0.5) * 2.0;
+                let status = 'normal';
+                if (h2 < 1.0) status = 'critical';
+                else if (h2 > 4.0) status = 'critical';
+                else if (h2 < 1.5 || h2 > 3.0) status = 'warning';
+                
+                logsDB.hydrogen.push({
+                    time: formatDateTime(time),
+                    value: h2.toFixed(2),
+                    status: status
+                });
+            }
+            
+            // Фракции (каждые 15 минут)
+            logsDB.fractions = [];
+            for (let i = hours * 4; i >= 0; i--) {
+                const time = new Date(now - i * 15 * 60 * 1000);
+                const gasoline = 40 + (Math.random() - 0.2) * 20;
+                const kerosene = 20 + (Math.random() - 0.2) * 15;
+                const residue = 100 - gasoline - kerosene;
+                
+                logsDB.fractions.push({
+                    time: formatDateTime(time),
+                    gasoline: Math.max(25, Math.min(65, gasoline)).toFixed(1),
+                    kerosene: Math.max(10, Math.min(40, kerosene)).toFixed(1),
+                    residue: Math.max(0, residue).toFixed(1)
+                });
+            }
+            
+            // Газы (каждые 10 минут)
+            logsDB.gases = [];
+            for (let i = hours * 6; i >= 0; i--) {
+                const time = new Date(now - i * 10 * 60 * 1000);
+                const methane = 5 + Math.random() * 15;
+                const ethane = 3 + Math.random() * 10;
+                const propane = 2 + Math.random() * 8;
+                const total = methane + ethane + propane;
+                
+                logsDB.gases.push({
+                    time: formatDateTime(time),
+                    methane: methane.toFixed(1),
+                    ethane: ethane.toFixed(1),
+                    propane: propane.toFixed(1),
+                    total: total.toFixed(1)
+                });
+            }
+        }
+        
+        // Форматирование даты и времени
+        function formatDateTime(date) {
+            return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth()+1).toString().padStart(2, '0')}.${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+        }
+        
+        // Обновление содержимого отчётов
+        function updateReportContent(type) {
+            switch(type) {
+                case 'daily': generateDailyReport(); break;
+                case 'temperature': renderTemperatureLog(); break;
+                case 'pressure': renderPressureLog(); break;
+                case 'hydrogen': renderHydrogenLog(); break;
+                case 'fractions': renderFractionsLog(); break;
+                case 'gases': renderGasesLog(); break;
+            }
+        }
+        
+        // Генерация ежедневного отчёта
+        function generateDailyReport() {
+            const date = document.getElementById('report-date').value;
+            const shift = document.getElementById('report-shift').value;
+            const operator = document.getElementById('report-operator').value;
+            const shiftNames = {'1': '00:00-08:00', '2': '08:00-20:00', '3': '20:00-00:00'};
+            
+            const temps = logsDB.temperature.slice(-144);
+            const avgTemp = temps.reduce((sum, t) => sum + parseFloat(t.value), 0) / temps.length;
+            const criticalTemp = temps.filter(t => t.status === 'critical').length;
+            
+            const pressures = logsDB.pressure.slice(-288);
+            const maxPress = Math.max(...pressures.map(p => parseFloat(p.value)));
+            const minPress = Math.min(...pressures.map(p => parseFloat(p.value)));
+            const criticalPress = pressures.filter(p => p.status === 'critical').length;
+            
+            const h2s = logsDB.hydrogen.slice(-720);
+            const avgH2 = h2s.reduce((sum, h) => sum + parseFloat(h.value), 0) / h2s.length;
+            const h2Deviations = h2s.filter(h => h.status !== 'normal').length;
+            
+            const fractions = logsDB.fractions.slice(-96);
+            const avgGasoline = fractions.reduce((sum, f) => sum + parseFloat(f.gasoline), 0) / fractions.length;
+            const avgKerosene = fractions.reduce((sum, f) => sum + parseFloat(f.kerosene), 0) / fractions.length;
+            
+            const gases = logsDB.gases.slice(-144);
+            const avgGases = gases.reduce((sum, g) => sum + parseFloat(g.total), 0) / gases.length;
+            
+            const html = `
+                <div class="operator-info">
+                    <strong>Дата:</strong> ${date.split('-').reverse().join('.')} &nbsp;|&nbsp; 
+                    <strong>Смена:</strong> №${shift} (${shiftNames[shift]}) &nbsp;|&nbsp; 
+                    <strong>Оператор:</strong> ${operator} &nbsp;|&nbsp; 
+                    <strong>Сменный инженер:</strong> Сидоров А.Н.
+                </div>
+                
+                <div class="summary-stats">
+                    <div class="stat-card">
+                        <div class="stat-label">Средняя температура</div>
+                        <div class="stat-value">${avgTemp.toFixed(1)}<span class="stat-unit">°C</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Критических событий</div>
+                        <div class="stat-value">${criticalTemp + criticalPress}<span class="stat-unit">событий</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Средний H₂</div>
+                        <div class="stat-value">${avgH2.toFixed(2)}<span class="stat-unit">%</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Выход бензина</div>
+                        <div class="stat-value">${avgGasoline.toFixed(1)}<span class="stat-unit">%</span></div>
+                    </div>
+                </div>
+                
+                <div class="report-section">
+                    <h3>🌡️ Температура за смену</h3>
+                    <p><strong>Средняя:</strong> ${avgTemp.toFixed(1)} °C</p>
+                    <p><strong>Количество критических отклонений:</strong> ${criticalTemp}</p>
+                    <p><strong>Тип катализатора:</strong> Цеолитсодержащий</p>
+                </div>
+                
+                <div class="report-section">
+                    <h3>⚡ Давление за смену</h3>
+                    <p><strong>Максимальное:</strong> ${maxPress.toFixed(2)} МПа</p>
+                    <p><strong>Минимальное:</strong> ${minPress.toFixed(2)} МПа</p>
+                    <p><strong>Количество аварий по давлению:</strong> ${criticalPress}</p>
+                </div>
+                
+                <div class="report-section">
+                    <h3>💧 Водород</h3>
+                    <p><strong>Средний уровень:</strong> ${avgH2.toFixed(2)}%</p>
+                    <p><strong>Количество отклонений:</strong> ${h2Deviations}</p>
+                </div>
+                
+                <div class="report-section">
+                    <h3>📊 Фракции</h3>
+                    <p><strong>Бензин:</strong> ${avgGasoline.toFixed(1)}% (норма: 40-50%) ${avgGasoline >= 40 && avgGasoline <= 50 ? '✓' : '⚠️'}</p>
+                    <p><strong>Керосин:</strong> ${avgKerosene.toFixed(1)}% (норма: 20-30%) ${avgKerosene >= 20 && avgKerosene <= 30 ? '✓' : '⚠️'}</p>
+                </div>
+                
+                <div class="report-section">
+                    <h3>💨 Газы</h3>
+                    <p><strong>Средний выход:</strong> ${avgGases.toFixed(1)}% (норма: 5-15%) ${avgGases >= 5 && avgGases <= 15 ? '✓' : '⚠️'}</p>
+                </div>
+                
+                <div style="margin-top: 30px; text-align: right; font-style: italic;">
+                    Отчёт сформирован: ${formatDateTime(new Date())}<br>
+                    Подпись оператора: _________________ / ${operator} /
+                </div>
+            `;
+            
+            document.getElementById('daily-report-content').innerHTML = html;
+        }
+        
+        // Отрисовка логов
+        function renderTemperatureLog() {
+            const period = parseInt(document.getElementById('temp-period').value);
+            const catalystFilter = document.getElementById('temp-catalyst-filter').value;
+            
+            let data = logsDB.temperature.slice(-period * 6);
+            if (catalystFilter !== 'all') data = data.filter(d => d.catalyst === catalystFilter);
+            
+            let html = `<table class="report-table"><thead><tr><th>Время</th><th>Катализатор</th><th>Температура (°C)</th><th>Статус</th></tr></thead><tbody>`;
+            
+            data.slice(-50).reverse().forEach(entry => {
+                const statusClass = entry.status === 'normal' ? 'status-normal' : 'status-warning';
+                const statusText = entry.status === 'normal' ? 'Норма' : 'Отклонение';
+                html += `<tr><td>${entry.time}</td><td>${entry.catalyst === 'amorphous' ? 'Аморфный' : entry.catalyst === 'zeolite' ? 'Цеолитсодержащий' : 'Совмещенный'}</td><td><strong>${entry.value}</strong></td><td><span class="status-badge ${statusClass}">${statusText}</span></td></tr>`;
+            });
+            
+            html += `</tbody></table><p style="margin-top: 10px; color: #7f8c8d;">Всего записей: ${data.length}</p>`;
+            document.getElementById('temperature-log-content').innerHTML = html;
+        }
+        
+        function renderPressureLog() {
+            const period = parseInt(document.getElementById('press-period').value);
+            const stageFilter = document.getElementById('press-stage-filter').value;
+            
+            let data = logsDB.pressure.slice(-period * 12);
+            if (stageFilter !== 'all') data = data.filter(d => d.stage === stageFilter);
+            
+            let html = `<table class="report-table"><thead><tr><th>Время</th><th>Этап</th><th>Давление (МПа)</th><th>Статус</th></tr></thead><tbody>`;
+            
+            data.slice(-50).reverse().forEach(entry => {
+                let statusClass = 'status-normal', statusText = 'Норма';
+                if (entry.status === 'critical') { statusClass = 'status-critical'; statusText = 'Критично'; }
+                else if (entry.status === 'warning') { statusClass = 'status-warning'; statusText = 'Внимание'; }
+                
+                const stageText = entry.stage === 'heating' ? 'Нагрев' : entry.stage === 'reaction' ? 'Реакция' : 'Охлаждение';
+                html += `<tr><td>${entry.time}</td><td>${stageText}</td><td><strong>${entry.value}</strong></td><td><span class="status-badge ${statusClass}">${statusText}</span></td></tr>`;
+            });
+            
+            html += `</tbody></table><p style="margin-top: 10px; color: #7f8c8d;">Всего записей: ${data.length}</p>`;
+            document.getElementById('pressure-log-content').innerHTML = html;
+        }
+        
+        function renderHydrogenLog() {
+            const period = parseInt(document.getElementById('h2-period').value);
+            const data = logsDB.hydrogen.slice(-period * 30);
+            
+            let html = `<table class="report-table"><thead><tr><th>Время</th><th>Концентрация H₂ (%)</th><th>Статус</th></tr></thead><tbody>`;
+            
+            data.slice(-50).reverse().forEach(entry => {
+                let statusClass = 'status-normal', statusText = 'Норма';
+                if (entry.status === 'critical') { statusClass = 'status-critical'; statusText = 'Критично'; }
+                else if (entry.status === 'warning') { statusClass = 'status-warning'; statusText = 'Внимание'; }
+                html += `<tr><td>${entry.time}</td><td><strong>${entry.value}</strong></td><td><span class="status-badge ${statusClass}">${statusText}</span></td></tr>`;
+            });
+            
+            html += `</tbody></table><p style="margin-top: 10px; color: #7f8c8d;">Всего записей: ${data.length}</p>`;
+            document.getElementById('hydrogen-log-content').innerHTML = html;
+        }
+        
+        function renderFractionsLog() {
+            const period = parseInt(document.getElementById('frac-period').value);
+            const data = logsDB.fractions.slice(-period * 4);
+            
+            let html = `<table class="report-table"><thead><tr><th>Время</th><th>Бензин (%)</th><th>Керосин (%)</th><th>Остаток (%)</th></tr></thead><tbody>`;
+            
+            data.slice(-30).reverse().forEach(entry => {
+                html += `<tr><td>${entry.time}</td><td><strong>${entry.gasoline}</strong> ${entry.gasoline >= 40 && entry.gasoline <= 50 ? '✓' : '⚠️'}</td><td><strong>${entry.kerosene}</strong> ${entry.kerosene >= 20 && entry.kerosene <= 30 ? '✓' : '⚠️'}</td><td>${entry.residue}</td></tr>`;
+            });
+            
+            html += `</tbody></table><p style="margin-top: 10px; color: #7f8c8d;">Всего записей: ${data.length}</p>`;
+            document.getElementById('fractions-log-content').innerHTML = html;
+        }
+        
+        function renderGasesLog() {
+            const period = parseInt(document.getElementById('gas-period').value);
+            const data = logsDB.gases.slice(-period * 6);
+            
+            let html = `<table class="report-table"><thead><tr><th>Время</th><th>Метан (%)</th><th>Этан (%)</th><th>Пропан (%)</th><th>Сумма (%)</th></tr></thead><tbody>`;
+            
+            data.slice(-30).reverse().forEach(entry => {
+                const total = parseFloat(entry.total);
+                const status = total >= 5 && total <= 15 ? '✓' : '⚠️';
+                html += `<tr><td>${entry.time}</td><td>${entry.methane}</td><td>${entry.ethane}</td><td>${entry.propane}</td><td><strong>${entry.total}</strong> ${status}</td></tr>`;
+            });
+            
+            html += `</tbody></table><p style="margin-top: 10px; color: #7f8c8d;">Всего записей: ${data.length}</p>`;
+            document.getElementById('gases-log-content').innerHTML = html;
+        }
+        
+        // Функция экспорта в PDF
+        function exportToPDF(elementId, filename) {
+            const element = document.getElementById(elementId);
+            if (!element) {
+                alert('Элемент для экспорта не найден!');
+                return;
+            }
+            
+            // Показываем оверлей загрузки
+            const overlay = document.getElementById('loading-overlay');
+            overlay.style.display = 'flex';
+            
+            // Настройки для PDF
+            const opt = {
+                margin:        [10, 10, 10, 10],
+                filename:      `${filename}_${new Date().toISOString().split('T')[0]}.pdf`,
+                image:         { type: 'jpeg', quality: 0.98 },
+                html2canvas:   { 
+                    scale: 2,
+                    useCORS: true,
+                    logging: false
+                },
+                jsPDF:         { 
+                    unit: 'mm', 
+                    format: 'a4', 
+                    orientation: 'portrait' 
+                },
+                pagebreak:     { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+            
+            // Генерируем PDF
+            html2pdf().set(opt).from(element).save().then(() => {
+                // Скрываем оверлей
+                overlay.style.display = 'none';
+                console.log(`✅ PDF сохранён: ${opt.filename}`);
+            }).catch((error) => {
+                overlay.style.display = 'none';
+                console.error('Ошибка при создании PDF:', error);
+                alert('Ошибка при создании PDF. Попробуйте ещё раз.');
+            });
+        }
+        
+        // Экспорт в CSV
+        function exportToCSV(type) {
+            let data, headers, filename;
+            const date = new Date().toISOString().split('T')[0];
+            
+            switch(type) {
+                case 'daily':
+                    alert('Для ежедневного отчёта используйте экспорт в PDF');
+                    return;
+                case 'temperature':
+                    data = logsDB.temperature;
+                    headers = ['Время', 'Катализатор', 'Температура (°C)', 'Статус'];
+                    filename = `temperature_log_${date}.csv`;
+                    break;
+                case 'pressure':
+                    data = logsDB.pressure;
+                    headers = ['Время', 'Этап', 'Давление (МПа)', 'Статус'];
+                    filename = `pressure_log_${date}.csv`;
+                    break;
+                case 'hydrogen':
+                    data = logsDB.hydrogen;
+                    headers = ['Время', 'Концентрация H2 (%)', 'Статус'];
+                    filename = `hydrogen_log_${date}.csv`;
+                    break;
+                case 'fractions':
+                    data = logsDB.fractions;
+                    headers = ['Время', 'Бензин (%)', 'Керосин (%)', 'Остаток (%)'];
+                    filename = `fractions_log_${date}.csv`;
+                    break;
+                case 'gases':
+                    data = logsDB.gases;
+                    headers = ['Время', 'Метан (%)', 'Этан (%)', 'Пропан (%)', 'Сумма (%)'];
+                    filename = `gases_log_${date}.csv`;
+                    break;
+            }
+            
+            let csv = headers.join(';') + '\n';
+            
+            if (type === 'temperature') {
+                data.forEach(row => csv += `${row.time};${row.catalyst};${row.value};${row.status}\n`);
+            } else if (type === 'pressure') {
+                data.forEach(row => csv += `${row.time};${row.stage};${row.value};${row.status}\n`);
+            } else if (type === 'hydrogen') {
+                data.forEach(row => csv += `${row.time};${row.value};${row.status}\n`);
+            } else if (type === 'fractions') {
+                data.forEach(row => csv += `${row.time};${row.gasoline};${row.kerosene};${row.residue}\n`);
+            } else if (type === 'gases') {
+                data.forEach(row => csv += `${row.time};${row.methane};${row.ethane};${row.propane};${row.total}\n`);
+            }
+            
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            
+            console.log(`✅ CSV сохранён: ${filename}`);
+        }
+        
+        // Инициализация
+        generateLogs(24);
+        generateDailyReport();
+        
+        // Обработчики фильтров
+        document.getElementById('temp-period').addEventListener('change', renderTemperatureLog);
+        document.getElementById('temp-catalyst-filter').addEventListener('change', renderTemperatureLog);
+        document.getElementById('press-period').addEventListener('change', renderPressureLog);
+        document.getElementById('press-stage-filter').addEventListener('change', renderPressureLog);
+        document.getElementById('h2-period').addEventListener('change', renderHydrogenLog);
+        document.getElementById('frac-period').addEventListener('change', renderFractionsLog);
+        document.getElementById('gas-period').addEventListener('change', renderGasesLog);
+        
+        console.log('📊 Модуль отчётов загружен');
+        console.log('📄 Доступен экспорт в PDF и CSV');
+    </script>
+</body>
+</html>

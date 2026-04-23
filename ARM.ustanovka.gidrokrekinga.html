@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link href="style.css" rel="stylesheet">
+    <!-- Подключение Chart.js для графиков -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <title>АРМ оператора установки гидрокрекинга</title>
+    <style>
+        /* Дополнительные стили для главной страницы */
+        .dashboard-overview {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .overview-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            display: block;
+        }
+        
+        .overview-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .overview-card.temperature { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .overview-card.pressure { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .overview-card.hydrogen { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+        .overview-card.fractions { background: linear-gradient(135deg, #f39c12, #e67e22); }
+        
+        .card-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .card-title {
+            font-size: 0.9em;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .card-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .card-unit {
+            font-size: 0.5em;
+            opacity: 0.8;
+        }
+        
+        .card-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            background: rgba(255,255,255,0.2);
+            margin-top: 10px;
+        }
+        
+        .mnemo-container {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .mnemo-title {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            opacity: 0.8;
+        }
+        
+        .process-flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        
+        .process-unit {
+            text-align: center;
+            min-width: 120px;
+        }
+        
+        .unit-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5em;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .unit-name {
+            color: white;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .unit-value {
+            color: #00d2ff;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+        
+        .unit-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin: 10px auto;
+        }
+        
+        .flow-arrow {
+            color: rgba(255,255,255,0.5);
+            font-size: 2em;
+        }
+        
+        .alarms-panel {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .alarms-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .alarm-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .alarm-critical {
+            background: #fadbd8;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .alarm-warning {
+            background: #fef5e7;
+            border-left: 4px solid #f39c12;
+        }
+        
+        .alarm-time {
+            color: #7f8c8d;
+            font-family: monospace;
+            margin-right: 15px;
+            min-width: 70px;
+        }
+        
+        .alarm-icon {
+            margin-right: 15px;
+            font-size: 1.2em;
+        }
+        
+        .alarm-message {
+            flex: 1;
+        }
+        
+        .trend-chart {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .action-btn {
+            background: #34495e;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            text-align: center;
+            text-decoration: none;
+            transition: background 0.2s;
+            display: block;
+        }
+        
+        .action-btn:hover {
+            background: #2c3e50;
+        }
+        
+        .action-btn.critical {
+            background: #e74c3c;
+            animation: pulse-btn 2s infinite;
+        }
+        
+        @keyframes pulse-btn {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .system-status {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .status-indicator-large {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .info-label {
+            color: #7f8c8d;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .last-update {
+            color: #7f8c8d;
+            font-size: 0.85em;
+            margin-top: 10px;
+            text-align: right;
+        }
+        
+        .operator-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>🚀 Установка гидрокрекинга</h1>
+<div id="nav">
+    <ul>
+        <li title="Главная страница АРМ оператора"><a href="ARM.ustanovka.gidrokrekinga.html">🏠 Главная</a></li>
+        <li title="Контроль температуры"><a href="kontrol.temperaturi.html">🌡️ Температура</a></li>
+        <li title="Контроль давления"><a href="kontrol.davlenia.html">⚡ Давление</a></li>
+        <li title="Контроль водорода"><a href="kontrol.vodoroda.html">💧 Водород</a></li>
+        <li title="Получение фракций"><a href="kontrol.fraction.html">📊 Фракции</a></li>
+        <li title="Контроль режимов"><a href="kontrol.regkr.html">📈 Режимы</a></li>
+        <li title="Отчёты и логирование"><a href="reports.html">📋 Отчёты</a></li>
+    </ul>
+</div>
+    
+    <div class="wrapper">
+        <div id="sidebar1" class="aside">
+            <div class="logo-sidebar">
+                <img src="financial-logo-abstract-finance-logo-vector.jpg" alt="Логотип" width="200" height="200" />
+            </div>
+            
+            <!-- Информация об операторе -->
+            <div class="operator-info" style="margin-top: 20px;">
+                <h3 style="color: white; margin-bottom: 15px;">👤 Оператор смены</h3>
+                <p><strong>ФИО:</strong> Петров В.П.</p>
+                <p><strong>Смена:</strong> №2 (08:00-20:00)</p>
+                <p><strong>Статус:</strong> На линии</p>
+                <p style="margin-top: 15px;"><strong>Катализатор:</strong> <span id="catalyst-info">Цеолитсодержащий</span></p>
+            </div>
+        </div>
+        
+        <div id="sidebar2" class="aside">
+            <h2>В поисках сотрудников</h2>
+            <p>Мы расширяем команду и ищем ответственного и квалифицированного оператора установки гидрокрекинга!</p>
+            <h3>Требования:</h3>
+            <p>- Опыт работы на нефтеперерабатывающих предприятиях или аналогичных производствах</p>
+            <p>- Знание технологических процессов гидрокрекинга</p>
+            <p>- Умение работать с контрольно-измерительными приборами и автоматизированными системами управления</p>
+            <p>- Ответственность, внимательность, готовность работать в команде</p>
+            <h3>Условия:</h3>
+            <p>- Стабильная заработная плата (обсуждается на собеседовании)</p>
+            <p>- Официальное трудоустройство</p>
+            <p>- Возможность профессионального роста</p>
+            <p>- Социальный пакет</p>
+        </div>
+        
+        <div id="article">
+            <!-- Статус системы -->
+            <div class="system-status">
+                <div class="status-indicator-large" id="system-status-indicator" style="background-color: #2ecc71;"></div>
+                <div style="flex: 1;">
+                    <strong id="system-status-text">Система работает в штатном режиме</strong>
+                    <div style="font-size: 0.85em; color: #7f8c8d; margin-top: 5px;">
+                        Время работы: <span id="uptime">2ч 15м</span>
+                    </div>
+                </div>
+                <div id="critical-count-badge" style="background: #e74c3c; color: white; padding: 5px 15px; border-radius: 20px; display: none;">
+                    🚨 Активных аварий: <span id="critical-count">0</span>
+                </div>
+            </div>
+            
+            <!-- Быстрые карточки параметров -->
+            <div class="dashboard-overview">
+                <a href="kontrol.temperaturi.html" class="overview-card temperature">
+                    <div class="card-icon">🌡️</div>
+                    <div class="card-title">Температура</div>
+                    <div class="card-value">
+                        <span id="main-temp">--</span><span class="card-unit">°C</span>
+                    </div>
+                    <div class="card-status" id="main-temp-status">Норма</div>
+                </a>
+                
+                <a href="kontrol.davlenia.html" class="overview-card pressure">
+                    <div class="card-icon">⚡</div>
+                    <div class="card-title">Давление</div>
+                    <div class="card-value">
+                        <span id="main-press">--</span><span class="card-unit">МПа</span>
+                    </div>
+                    <div class="card-status" id="main-press-status">Норма</div>
+                </a>
+                
+                <a href="kontrol.vodoroda.html" class="overview-card hydrogen">
+                    <div class="card-icon">💧</div>
+                    <div class="card-title">Водород H₂</div>
+                    <div class="card-value">
+                        <span id="main-h2">--</span><span class="card-unit">%</span>
+                    </div>
+                    <div class="card-status" id="main-h2-status">Норма</div>
+                </a>
+                
+                <a href="kontrol.fraction.html" class="overview-card fractions">
+                    <div class="card-icon">📊</div>
+                    <div class="card-title">Выход бензина</div>
+                    <div class="card-value">
+                        <span id="main-gasoline">--</span><span class="card-unit">%</span>
+                    </div>
+                    <div class="card-status" id="main-gasoline-status">Норма</div>
+                </a>
+            </div>
+            
+            <!-- Мнемосхема процесса -->
+            <div class="mnemo-container">
+                <div class="mnemo-title">📍 МНЕМОСХЕМА УСТАНОВКИ ГИДРОКРЕКИНГА</div>
+                <div class="process-flow">
+                    <div class="process-unit">
+                        <div class="unit-icon">🛢️</div>
+                        <div class="unit-name">Сырьё</div>
+                        <div class="unit-value" id="feed-value">100%</div>
+                        <div class="unit-status status-normal"></div>
+                    </div>
+                    <span class="flow-arrow">→</span>
+                    <div class="process-unit">
+                        <div class="unit-icon">🔥</div>
+                        <div class="unit-name">Нагрев</div>
+                        <div class="unit-value" id="heater-temp">--°C</div>
+                        <div class="unit-status" id="heater-status"></div>
+                    </div>
+                    <span class="flow-arrow">→</span>
+                    <div class="process-unit">
+                        <div class="unit-icon">⚗️</div>
+                        <div class="unit-name">Реактор</div>
+                        <div class="unit-value" id="reactor-press">--МПа</div>
+                        <div class="unit-status" id="reactor-status"></div>
+                    </div>
+                    <span class="flow-arrow">→</span>
+                    <div class="process-unit">
+                        <div class="unit-icon">💨</div>
+                        <div class="unit-name">Сепаратор</div>
+                        <div class="unit-value" id="separator-h2">--%</div>
+                        <div class="unit-status" id="separator-status"></div>
+                    </div>
+                    <span class="flow-arrow">→</span>
+                    <div class="process-unit">
+                        <div class="unit-icon">🏭</div>
+                        <div class="unit-name">Колонна</div>
+                        <div class="unit-value" id="column-out">Продукты</div>
+                        <div class="unit-status status-normal"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Информационная панель -->
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Тип катализатора</div>
+                    <div class="info-value" id="catalyst-type-display">Цеолитсодержащий</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Объёмная скорость</div>
+                    <div class="info-value" id="flow-rate-display">0.35 ч⁻¹</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Кратность циркуляции H₂</div>
+                    <div class="info-value" id="h2-circulation">1400 м³/м³</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Конверсия сырья</div>
+                    <div class="info-value" id="conversion-display">78%</div>
+                </div>
+            </div>
+            
+            <!-- График трендов -->
+            <div class="trend-chart">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">📈 Тренды основных параметров (последние 5 минут)</h3>
+                <canvas id="main-trend-chart" style="height: 200px;"></canvas>
+            </div>
+            
+            <!-- Панель активных аварий -->
+            <div class="alarms-panel">
+                <div class="alarms-header">
+                    <h3 style="color: #2c3e50;">🚨 Активные аварии и предупреждения</h3>
+                    <span id="alarm-timestamp">Обновлено: --:--:--</span>
+                </div>
+                <div id="active-alarms-list">
+                    <div class="alarm-item" style="color: #7f8c8d; justify-content: center;">
+                        ✓ Нет активных аварий
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Быстрые действия -->
+<div class="quick-actions">
+    <a href="kontrol.temperaturi.html" class="action-btn">🌡️ Температура</a>
+    <a href="kontrol.davlenia.html" class="action-btn">⚡ Давление</a>
+    <a href="kontrol.vodoroda.html" class="action-btn">💧 Водород</a>
+    <a href="kontrol.fraction.html" class="action-btn">📊 Фракции</a>
+    <a href="kontrol.regkr.html" class="action-btn">📈 Режимы</a>
+    <a href="reports.html" class="action-btn" style="background: #e67e22;">📋 Отчёты</a>
+</div>
+
+    <script>
+        // Параметры системы
+        const PARAMS = {
+            temperature: { min: 350, max: 365, criticalLow: 345, criticalHigh: 370 },
+            pressure: { min: 3.0, max: 4.0, criticalLow: 1.3, criticalHigh: 4.2 },
+            hydrogen: { min: 1.5, max: 3.0, criticalLow: 1.0, criticalHigh: 4.0 },
+            gasoline: { min: 40, max: 50 }
+        };
+        
+        // Текущие значения
+        let currentValues = {
+            temperature: 358,
+            pressure: 3.5,
+            hydrogen: 2.3,
+            gasoline: 45,
+            flowRate: 0.35,
+            h2Circulation: 1400,
+            conversion: 78
+        };
+        
+        // Активные аварии
+        let activeAlarms = [];
+        
+        // История для графика (последние 30 точек)
+        const maxHistory = 30;
+        const timeLabels = [];
+        const history = {
+            temperature: [],
+            pressure: [],
+            hydrogen: []
+        };
+        
+        // Время запуска системы
+        const startTime = new Date();
+        
+        // Инициализация графика трендов
+        const ctx = document.getElementById('main-trend-chart').getContext('2d');
+        const trendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [
+                    {
+                        label: 'Температура (°C)',
+                        data: history.temperature,
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.05)',
+                        tension: 0.3,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Давление (МПа)',
+                        data: history.pressure,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.05)',
+                        tension: 0.3,
+                        borderWidth: 2,
+                        hidden: true
+                    },
+                    {
+                        label: 'Водород (%)',
+                        data: history.hydrogen,
+                        borderColor: '#2ecc71',
+                        backgroundColor: 'rgba(46, 204, 113, 0.05)',
+                        tension: 0.3,
+                        borderWidth: 2,
+                        hidden: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 330,
+                        max: 420
+                    }
+                }
+            }
+        });
+        
+        // Функция определения статуса
+        function getParamStatus(value, param) {
+            if (value < param.criticalLow || value > param.criticalHigh) return 'critical';
+            if (value < param.min || value > param.max) return 'warning';
+            return 'normal';
+        }
+        
+        // Функция обновления статуса системы
+        function updateSystemStatus() {
+            const hasCritical = activeAlarms.some(a => a.type === 'critical');
+            const hasWarning = activeAlarms.some(a => a.type === 'warning');
+            
+            const indicator = document.getElementById('system-status-indicator');
+            const statusText = document.getElementById('system-status-text');
+            const criticalBadge = document.getElementById('critical-count-badge');
+            const criticalCount = document.getElementById('critical-count');
+            
+            if (hasCritical) {
+                indicator.style.backgroundColor = '#e74c3c';
+                statusText.textContent = '⚠️ ВНИМАНИЕ! Обнаружены критические отклонения!';
+                criticalBadge.style.display = 'inline-block';
+                const count = activeAlarms.filter(a => a.type === 'critical').length;
+                criticalCount.textContent = count;
+            } else if (hasWarning) {
+                indicator.style.backgroundColor = '#f39c12';
+                statusText.textContent = '⚡ Внимание! Есть отклонения от нормы';
+                criticalBadge.style.display = 'none';
+            } else {
+                indicator.style.backgroundColor = '#2ecc71';
+                statusText.textContent = '✓ Система работает в штатном режиме';
+                criticalBadge.style.display = 'none';
+            }
+        }
+        
+        // Функция обновления времени работы
+        function updateUptime() {
+            const now = new Date();
+            const diff = Math.floor((now - startTime) / 1000);
+            const hours = Math.floor(diff / 3600);
+            const minutes = Math.floor((diff % 3600) / 60);
+            document.getElementById('uptime').textContent = `${hours}ч ${minutes}м`;
+        }
+        
+        // Функция добавления аварии
+        function addAlarm(type, param, value, message) {
+            const now = new Date();
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            
+            // Проверяем, есть ли уже такая авария
+            const existingIndex = activeAlarms.findIndex(a => a.param === param);
+            
+            if (type === 'normal') {
+                // Удаляем аварию, если параметр вернулся в норму
+                if (existingIndex >= 0) {
+                    activeAlarms.splice(existingIndex, 1);
+                }
+            } else {
+                const alarm = { time: timeStr, type, param, value, message };
+                if (existingIndex >= 0) {
+                    activeAlarms[existingIndex] = alarm;
+                } else {
+                    activeAlarms.unshift(alarm);
+                    if (activeAlarms.length > 10) activeAlarms.pop();
+                }
+            }
+            
+            // Обновляем отображение
+            updateAlarmsDisplay();
+            updateSystemStatus();
+        }
+        
+        // Функция обновления отображения аварий
+        function updateAlarmsDisplay() {
+            const alarmsList = document.getElementById('active-alarms-list');
+            const alarmTimestamp = document.getElementById('alarm-timestamp');
+            
+            const now = new Date();
+            alarmTimestamp.textContent = `Обновлено: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            
+            if (activeAlarms.length === 0) {
+                alarmsList.innerHTML = '<div class="alarm-item" style="color: #7f8c8d; justify-content: center;">✓ Нет активных аварий</div>';
+                return;
+            }
+            
+            alarmsList.innerHTML = '';
+            activeAlarms.forEach(alarm => {
+                const alarmEl = document.createElement('div');
+                alarmEl.className = `alarm-item ${alarm.type === 'critical' ? 'alarm-critical' : 'alarm-warning'}`;
+                
+                let icon = alarm.type === 'critical' ? '🚨' : '⚠️';
+                let paramName = '';
+                switch(alarm.param) {
+                    case 'temperature': paramName = 'Температура'; break;
+                    case 'pressure': paramName = 'Давление'; break;
+                    case 'hydrogen': paramName = 'Водород'; break;
+                    case 'gasoline': paramName = 'Выход бензина'; break;
+                    default: paramName = alarm.param;
+                }
+                
+                alarmEl.innerHTML = `
+                    <span class="alarm-time">${alarm.time}</span>
+                    <span class="alarm-icon">${icon}</span>
+                    <span class="alarm-message"><strong>${paramName}:</strong> ${alarm.message}</span>
+                `;
+                alarmsList.appendChild(alarmEl);
+            });
+        }
+        
+        // Генерация новых значений
+        function generateNewValues() {
+            const newValues = { ...currentValues };
+            
+            newValues.temperature += (Math.random() - 0.5) * 2;
+            newValues.pressure += (Math.random() - 0.5) * 0.15;
+            newValues.hydrogen += (Math.random() - 0.5) * 0.1;
+            newValues.gasoline += (Math.random() - 0.5) * 1.5;
+            newValues.flowRate += (Math.random() - 0.5) * 0.02;
+            newValues.h2Circulation += (Math.random() - 0.5) * 30;
+            newValues.conversion += (Math.random() - 0.5) * 1.5;
+            
+            // Иногда добавляем резкие изменения
+            if (Math.random() < 0.02) {
+                newValues.temperature += (Math.random() - 0.5) * 20;
+                newValues.pressure += (Math.random() - 0.5) * 2;
+            }
+            
+            // Ограничиваем значения
+            newValues.temperature = Math.min(420, Math.max(330, newValues.temperature));
+            newValues.pressure = Math.min(5.5, Math.max(0.5, newValues.pressure));
+            newValues.hydrogen = Math.min(5.0, Math.max(0.5, newValues.hydrogen));
+            newValues.gasoline = Math.min(65, Math.max(25, newValues.gasoline));
+            newValues.flowRate = Math.min(1.0, Math.max(0.1, newValues.flowRate));
+            newValues.h2Circulation = Math.min(2500, Math.max(500, newValues.h2Circulation));
+            newValues.conversion = Math.min(98, Math.max(50, newValues.conversion));
+            
+            return newValues;
+        }
+        
+        // Обновление карточки параметра
+        function updateOverviewCard(id, value, param, unit) {
+            const status = getParamStatus(value, param);
+            
+            document.getElementById(`main-${id}`).textContent = value.toFixed(1);
+            
+            const statusEl = document.getElementById(`main-${id}-status`);
+            if (status === 'normal') {
+                statusEl.textContent = 'Норма';
+                statusEl.style.background = 'rgba(46, 204, 113, 0.3)';
+            } else if (status === 'warning') {
+                statusEl.textContent = 'Внимание';
+                statusEl.style.background = 'rgba(243, 156, 18, 0.3)';
+            } else {
+                statusEl.textContent = 'Критично';
+                statusEl.style.background = 'rgba(231, 76, 60, 0.3)';
+            }
+            
+            // Добавляем аварию при изменении статуса
+            const oldStatus = getParamStatus(currentValues[id] || value, param);
+            if (status !== oldStatus) {
+                let message = '';
+                if (status === 'critical') {
+                    message = `Критическое значение ${value.toFixed(1)} ${unit}`;
+                } else if (status === 'warning') {
+                    message = `Отклонение от нормы ${value.toFixed(1)} ${unit}`;
+                }
+                addAlarm(status, id, value, message);
+            }
+            
+            return status;
+        }
+        
+        // Основная функция обновления
+        function updateMainData() {
+            const newValues = generateNewValues();
+            currentValues = newValues;
+            
+            // Обновляем карточки
+            updateOverviewCard('temp', newValues.temperature, PARAMS.temperature, '°C');
+            updateOverviewCard('press', newValues.pressure, PARAMS.pressure, 'МПа');
+            updateOverviewCard('h2', newValues.hydrogen, PARAMS.hydrogen, '%');
+            
+            // Обновляем выход бензина
+            const gasolineStatus = newValues.gasoline >= PARAMS.gasoline.min && newValues.gasoline <= PARAMS.gasoline.max ? 'normal' : 'warning';
+            document.getElementById('main-gasoline').textContent = newValues.gasoline.toFixed(1);
+            const gasolineStatusEl = document.getElementById('main-gasoline-status');
+            if (gasolineStatus === 'normal') {
+                gasolineStatusEl.textContent = 'Норма';
+                gasolineStatusEl.style.background = 'rgba(46, 204, 113, 0.3)';
+            } else {
+                gasolineStatusEl.textContent = 'Отклонение';
+                gasolineStatusEl.style.background = 'rgba(243, 156, 18, 0.3)';
+            }
+            
+            // Обновляем информационную панель
+            document.getElementById('flow-rate-display').textContent = newValues.flowRate.toFixed(2) + ' ч⁻¹';
+            document.getElementById('h2-circulation').textContent = Math.round(newValues.h2Circulation) + ' м³/м³';
+            document.getElementById('conversion-display').textContent = newValues.conversion.toFixed(1) + '%';
+            
+            // Обновляем мнемосхему
+            document.getElementById('heater-temp').textContent = newValues.temperature.toFixed(1) + '°C';
+            document.getElementById('reactor-press').textContent = newValues.pressure.toFixed(2) + 'МПа';
+            document.getElementById('separator-h2').textContent = newValues.hydrogen.toFixed(2) + '%';
+            
+            // Обновляем статусы на мнемосхеме
+            updateMnemoStatus('heater', newValues.temperature, PARAMS.temperature);
+            updateMnemoStatus('reactor', newValues.pressure, PARAMS.pressure);
+            updateMnemoStatus('separator', newValues.hydrogen, PARAMS.hydrogen);
+            
+            // Обновляем историю для графика
+            const now = new Date();
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            
+            timeLabels.push(timeStr);
+            history.temperature.push(newValues.temperature);
+            history.pressure.push(newValues.pressure);
+            history.hydrogen.push(newValues.hydrogen);
+            
+            if (timeLabels.length > maxHistory) {
+                timeLabels.shift();
+                history.temperature.shift();
+                history.pressure.shift();
+                history.hydrogen.shift();
+            }
+            
+            trendChart.update();
+            
+            // Обновляем время
+            document.getElementById('main-update-time').textContent = `Последнее обновление данных: ${timeStr}`;
+            updateUptime();
+            
+            // Логирование
+            console.log(`[Главная] ${timeStr} | T=${newValues.temperature.toFixed(1)}°C | P=${newValues.pressure.toFixed(2)}МПа | H2=${newValues.hydrogen.toFixed(2)}% | Бензин=${newValues.gasoline.toFixed(1)}%`);
+        }
+        
+        // Обновление статуса на мнемосхеме
+        function updateMnemoStatus(unit, value, param) {
+            const status = getParamStatus(value, param);
+            const statusEl = document.getElementById(`${unit}-status`);
+            statusEl.className = 'unit-status';
+            if (status === 'normal') statusEl.style.backgroundColor = '#2ecc71';
+            else if (status === 'warning') statusEl.style.backgroundColor = '#f39c12';
+            else statusEl.style.backgroundColor = '#e74c3c';
+        }
+        
+        // Инициализация
+        function initialize() {
+            // Заполняем историю
+            for (let i = 0; i < 15; i++) {
+                const values = generateNewValues();
+                currentValues = values;
+                
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - (15 - i));
+                const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                
+                timeLabels.push(timeStr);
+                history.temperature.push(values.temperature);
+                history.pressure.push(values.pressure);
+                history.hydrogen.push(values.hydrogen);
+            }
+            
+            trendChart.update();
+            updateMainData();
+            
+            console.log('🟢 АРМ оператора установки гидрокрекинга запущен');
+            console.log(`📅 ${new Date().toLocaleString('ru-RU')}`);
+            console.log('👤 Оператор: Петров В.П., смена №2');
+        }
+        
+        // Запуск
+        initialize();
+        
+        // Периодическое обновление (каждые 3 секунды)
+        setInterval(updateMainData, 3000);
+        
+        // Обновление времени работы каждую минуту
+        setInterval(updateUptime, 60000);
+    </script>
+</body>
+</html>

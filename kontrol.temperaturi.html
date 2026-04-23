@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link href="style.css" rel="stylesheet">
+    <!-- Подключение Chart.js для графиков -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <title>Контроль температуры</title>
+    <style>
+        /* Дополнительные стили для элементов управления */
+        .control-panel {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        .temp-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            text-align: center;
+            border-radius: 5px;
+        }
+        .alarm-indicator {
+            width: 100%;
+            height: 40px;
+            margin: 10px 0;
+            background-color: #2ecc71;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .alarm-active {
+            background-color: #e74c3c;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        select {
+            padding: 8px;
+            font-size: 1em;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Контроль температуры</h1>
+<div id="nav">
+    <ul>
+        <li title="Главная страница"><a href="ARM.ustanovka.gidrokrekinga.html">🏠 Главная</a></li>
+        <li title="Контроль температуры"><a href="kontrol.temperaturi.html" style="font-weight: bold; background: #3498db; color: white;">🌡️ Температура</a></li>
+        <li title="Контроль давления"><a href="kontrol.davlenia.html">⚡ Давление</a></li>
+        <li title="Контроль водорода"><a href="kontrol.vodoroda.html">💧 Водород</a></li>
+        <li title="Получение фракций"><a href="kontrol.fraction.html">📊 Фракции</a></li>
+        <li title="Контроль режимов"><a href="kontrol.regkr.html">📈 Режимы</a></li>
+        <li title="Отчёты и логирование"><a href="reports.html">📋 Отчёты</a></li>
+    </ul>
+</div>
+    <div class="wrapper">
+        <div id="sidebar1" class="aside">
+            <div class="logo-sidebar">
+                <img src="financial-logo-abstract-finance-logo-vector.jpg" alt="Логотип" width="200" height="200" />
+            </div>
+        </div>
+        
+        <div id="sidebar2" class="aside">
+            <h2>В поисках сотрудников</h2>
+            <p>Мы расширяем команду и ищем ответственного и квалифицированного оператора установки гидрокрекинга!</p>
+            <h3>Требования:</h3>
+            <p>- Опыт работы на нефтеперерабатывающих предприятиях или аналогичных производствах</p>
+            <p>- Знание технологических процессов гидрокрекинга</p>
+            <p>- Умение работать с контрольно-измерительными приборами и автоматизированными системами управления</p>
+            <p>- Ответственность, внимательность, готовность работать в команде</p>
+            <h3>Условия:</h3>
+            <p>- Стабильная заработная плата (обсуждается на собеседовании)</p>
+            <p>- Официальное трудоустройство</p>
+            <p>- Возможность профессионального роста</p>
+            <p>- Социальный пакет</p>
+        </div>
+        
+        <div id="article">
+            <h2>Контроль температуры в реакторе</h2>
+            
+            <!-- Панель управления в соответствии с требованиями -->
+            <div class="control-panel">
+                <label for="catalyst-type">Тип катализатора:</label>
+                <select id="catalyst-type">
+                    <option value="amorphous">Аморфный</option>
+                    <option value="zeolite" selected>Цеолитсодержащий</option>
+                    <option value="combined">Совмещенный</option>
+                </select>
+                <p style="margin-top: 10px; font-size: 0.9em; color: #555;">
+                    Границы нормы: <span id="temp-limits">350–365 °С</span>
+                </p>
+            </div>
+            
+            <!-- Индикатор температуры -->
+            <div class="temp-display" id="current-temp">--.- °C</div>
+            
+            <!-- Индикатор аварии -->
+            <div class="alarm-indicator" id="alarm-indicator">
+                НОРМА
+            </div>
+            
+            <!-- Контейнер для графика -->
+            <div class="chart-container">
+                <canvas id="temperature-chart"></canvas>
+            </div>
+            
+            <!-- Текстовое описание (оставлено для контекста) -->
+            <p>Наиболее важными элементами этого процесса являются система катализатора и управление температурой реактора. Для поддержания реакции гидрокрекинга на заданном уровне в течение цикла необходимо постоянно повышать температуру в реакторе, поскольку активность частиц катализатора неизбежно снижается из-за оседания кокса на их поверхности.</p>
+            
+            <a href="ARM.ustanovka.gidrokrekinga.html">Главная страница</a>
+        </div>
+    </div>
+    
+    <div id="footer">
+        <p>Contacts: viktor.petrov@pikely.ru</p>
+        <p>Copyright © Pikely.ru, 2026</p>
+    </div>
+
+    <script>
+        // Данные для графика (последние 20 точек)
+        const maxDataPoints = 20;
+        const timeLabels = [];
+        const tempData = [];
+        
+        // Инициализация графика
+        const ctx = document.getElementById('temperature-chart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [{
+                    label: 'Температура (°C)',
+                    data: tempData,
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        min: 330,
+                        max: 420,
+                        title: {
+                            display: true,
+                            text: 'Температура (°C)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Время (чч:мм:сс)'
+                        }
+                    }
+                },
+                plugins: {
+                    annotation: {
+                        annotations: {}
+                    }
+                }
+            }
+        });
+
+        // Функция обновления аннотаций (зон нормы и критичности)
+        function updateChartZones(lowerLimit, upperLimit) {
+            // Удаляем старые аннотации
+            if (chart.options.plugins.annotation) {
+                chart.options.plugins.annotation.annotations = {};
+            }
+            
+            // Добавляем зону нормы (зеленый прямоугольник)
+            chart.options.plugins.annotation = {
+                annotations: {
+                    zoneNormal: {
+                        type: 'box',
+                        yMin: lowerLimit,
+                        yMax: upperLimit,
+                        backgroundColor: 'rgba(46, 204, 113, 0.15)',
+                        borderColor: 'rgba(46, 204, 113, 0.5)',
+                        borderWidth: 1
+                    },
+                    zoneCriticalLow: {
+                        type: 'box',
+                        yMin: 330,
+                        yMax: lowerLimit - 5,
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        borderColor: 'rgba(231, 76, 60, 0.3)',
+                        borderWidth: 1
+                    },
+                    zoneCriticalHigh: {
+                        type: 'box',
+                        yMin: upperLimit + 5,
+                        yMax: 420,
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        borderColor: 'rgba(231, 76, 60, 0.3)',
+                        borderWidth: 1
+                    }
+                }
+            };
+            chart.update();
+        }
+
+        // Функция получения границ по типу катализатора (Таблица 5 из PDF)
+        function getTemperatureLimits(catalystType) {
+            switch(catalystType) {
+                case 'amorphous': return { min: 390, max: 400 };
+                case 'zeolite': return { min: 350, max: 365 };
+                case 'combined': return { min: 380, max: 397 };
+                default: return { min: 350, max: 365 };
+            }
+        }
+
+        // Обновление отображаемых лимитов
+        function updateLimitsDisplay() {
+            const catalyst = document.getElementById('catalyst-type').value;
+            const limits = getTemperatureLimits(catalyst);
+            document.getElementById('temp-limits').textContent = `${limits.min}–${limits.max} °С`;
+            return limits;
+        }
+
+        // Симуляция текущей температуры (в реальной системе приходит с датчика)
+        function generateTemperature() {
+            // Имитация небольшого дрейфа температуры
+            const lastTemp = tempData.length > 0 ? tempData[tempData.length - 1] : 360;
+            const change = (Math.random() - 0.5) * 3; // Изменение от -1.5 до +1.5
+            let newTemp = lastTemp + change;
+            
+            // Ограничиваем в разумных пределах 330-420
+            return Math.min(420, Math.max(330, newTemp));
+        }
+
+        // Проверка критичности и обновление индикатора
+        function checkAlarm(currentTemp, limits) {
+            const indicator = document.getElementById('alarm-indicator');
+            const isLowCritical = currentTemp < (limits.min - 5);
+            const isHighCritical = currentTemp > (limits.max + 5);
+            const isNormal = currentTemp >= limits.min && currentTemp <= limits.max;
+            
+            if (isLowCritical || isHighCritical) {
+                indicator.textContent = `АВАРИЯ! Температура ${currentTemp.toFixed(1)}°C вне критических границ!`;
+                indicator.classList.add('alarm-active');
+                // Имитация звука (в браузере без взаимодействия пользователя может блокироваться)
+                // В реальном приложении здесь был бы звуковой сигнал
+                console.warn('Звуковой сигнал тревоги!');
+            } else if (!isNormal) {
+                indicator.textContent = `ВНИМАНИЕ! Температура вне нормы (${limits.min}–${limits.max}°C)`;
+                indicator.classList.remove('alarm-active');
+                indicator.style.backgroundColor = '#f39c12'; // Оранжевый
+            } else {
+                indicator.textContent = 'НОРМА';
+                indicator.classList.remove('alarm-active');
+                indicator.style.backgroundColor = '#2ecc71'; // Зеленый
+            }
+        }
+
+        // Основная функция обновления данных
+        function updateTemperatureData() {
+            const catalyst = document.getElementById('catalyst-type').value;
+            const limits = getTemperatureLimits(catalyst);
+            
+            // Генерируем новое значение
+            const newTemp = generateTemperature();
+            
+            // Обновляем массив данных
+            tempData.push(newTemp);
+            const now = new Date();
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            timeLabels.push(timeStr);
+            
+            // Ограничиваем количество точек
+            if (tempData.length > maxDataPoints) {
+                tempData.shift();
+                timeLabels.shift();
+            }
+            
+            // Обновляем цифровой индикатор
+            document.getElementById('current-temp').textContent = `${newTemp.toFixed(1)} °C`;
+            
+            // Проверяем аварийные ситуации
+            checkAlarm(newTemp, limits);
+            
+            // Обновляем график
+            chart.update();
+            
+            // Логирование в консоль (в реальной системе - запись в лог)
+            const status = (newTemp >= limits.min && newTemp <= limits.max) ? 'норма' : 'критично';
+            console.log(`[${timeStr}] Катализатор: ${catalyst}, Температура: ${newTemp.toFixed(1)}°C, Статус: ${status}`);
+        }
+
+        // Обработчик смены катализатора
+        document.getElementById('catalyst-type').addEventListener('change', function() {
+            const limits = updateLimitsDisplay();
+            updateChartZones(limits.min, limits.max);
+            
+            // При смене катализатора сразу проверяем текущую температуру
+            if (tempData.length > 0) {
+                const currentTemp = tempData[tempData.length - 1];
+                checkAlarm(currentTemp, limits);
+            }
+        });
+
+        // Инициализация зон при загрузке
+        const initialLimits = updateLimitsDisplay();
+        updateChartZones(initialLimits.min, initialLimits.max);
+
+        // Запускаем периодическое обновление данных (каждые 2 секунды, согласно требованиям)
+        setInterval(updateTemperatureData, 2000);
+        
+        // Первоначальное заполнение данными (чтобы график не был пустым)
+        for (let i = 0; i < 5; i++) {
+            updateTemperatureData();
+        }
+    </script>
+</body>
+</html>

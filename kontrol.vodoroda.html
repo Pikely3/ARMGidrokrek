@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link href="style.css" rel="stylesheet">
+    <!-- Подключение Chart.js для графиков -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <title>Контроль водорода</title>
+    <style>
+        /* Дополнительные стили для элементов управления водородом */
+        .control-panel {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        .h2-display {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 15px 0;
+            padding: 15px;
+            background: #fff;
+            border: 2px solid #ccc;
+            text-align: center;
+            border-radius: 8px;
+        }
+        .progress-container {
+            width: 100%;
+            height: 40px;
+            background-color: #ecf0f1;
+            border-radius: 20px;
+            margin: 20px 0;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid #bdc3c7;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #e74c3c, #f39c12, #2ecc71, #f39c12, #e74c3c);
+            transition: width 0.3s ease;
+            border-radius: 20px;
+        }
+        .progress-markers {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 10px;
+            font-size: 0.8em;
+            color: #555;
+        }
+        .alarm-indicator {
+            width: 100%;
+            min-height: 50px;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: #2ecc71;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1em;
+            text-align: center;
+        }
+        .alarm-critical {
+            background-color: #e74c3c;
+            animation: blink 1s infinite;
+        }
+        .alarm-warning {
+            background-color: #f39c12;
+        }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        .limits-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .risk-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Контроль избытка водорода</h1>
+<div id="nav">
+    <ul>
+        <li title="Главная страница"><a href="ARM.ustanovka.gidrokrekinga.html">🏠 Главная</a></li>
+        <li title="Контроль температуры"><a href="kontrol.temperaturi.html">🌡️ Температура</a></li>
+        <li title="Контроль давления"><a href="kontrol.davlenia.html">⚡ Давление</a></li>
+        <li title="Контроль водорода"><a href="kontrol.vodoroda.html" style="font-weight: bold; background: #3498db; color: white;">💧 Водород</a></li>
+        <li title="Получение фракций"><a href="kontrol.fraction.html">📊 Фракции</a></li>
+        <li title="Контроль режимов"><a href="kontrol.regkr.html">📈 Режимы</a></li>
+        <li title="Отчёты и логирование"><a href="reports.html">📋 Отчёты</a></li>
+    </ul>
+</div>
+    
+    <div class="wrapper">
+        <div id="sidebar1" class="aside">
+            <div class="logo-sidebar">
+                <img src="financial-logo-abstract-finance-logo-vector.jpg" alt="Логотип" width="200" height="200" />
+            </div>
+        </div>
+        
+        <div id="sidebar2" class="aside">
+            <h2>В поисках сотрудников</h2>
+            <p>Мы расширяем команду и ищем ответственного и квалифицированного оператора установки гидрокрекинга!</p>
+            <h3>Требования:</h3>
+            <p>- Опыт работы на нефтеперерабатывающих предприятиях или аналогичных производствах</p>
+            <p>- Знание технологических процессов гидрокрекинга</p>
+            <p>- Умение работать с контрольно-измерительными приборами и автоматизированными системами управления</p>
+            <p>- Ответственность, внимательность, готовность работать в команде</p>
+            <h3>Условия:</h3>
+            <p>- Стабильная заработная плата (обсуждается на собеседовании)</p>
+            <p>- Официальное трудоустройство</p>
+            <p>- Возможность профессионального роста</p>
+            <p>- Социальный пакет</p>
+        </div>
+        
+        <div id="article">
+            <h2>Контроль концентрации водорода в реакторах</h2>
+            
+            <!-- Информация о пределах -->
+            <div class="control-panel">
+                <h3 style="margin-top: 0; color: #2c3e50;">Параметры контроля H₂</h3>
+                <div class="limits-info">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span><strong style="color: #e74c3c;">▼ Критический минимум:</strong> 1.0% (риск неполной реакции)</span>
+                        <span><strong style="color: #2ecc71;">● Норма:</strong> 1.5–3.0%</span>
+                        <span><strong style="color: #e74c3c;">▲ Критический максимум:</strong> 4.0% (риск взрыва)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Цифровой индикатор -->
+            <div class="h2-display" id="current-h2">--.--%</div>
+            
+            <!-- Прогресс-бар -->
+            <div class="progress-container">
+                <div class="progress-bar" id="h2-progress-bar" style="width: 0%;"></div>
+            </div>
+            <div class="progress-markers">
+                <span>0%</span>
+                <span style="color: #e74c3c;">1.0%</span>
+                <span style="color: #2ecc71;">1.5%</span>
+                <span style="color: #2ecc71;">3.0%</span>
+                <span style="color: #e74c3c;">4.0%</span>
+                <span>5.0%</span>
+            </div>
+            
+            <!-- Индикатор состояния -->
+            <div class="alarm-indicator" id="alarm-indicator">
+                <span>✓ НОРМА</span>
+                <span class="status-badge" id="status-badge" style="background-color: #2ecc71;">Концентрация в норме</span>
+            </div>
+            
+            <!-- Контейнер для графика -->
+            <div class="chart-container">
+                <canvas id="h2-chart"></canvas>
+            </div>
+            
+            <!-- Информация о рисках -->
+            <div class="risk-info">
+                <strong>⚠️ Важно:</strong> 
+                <ul style="margin: 10px 0 0 20px;">
+                    <li>Концентрация H₂ ниже 1.0% — риск неполной реакции гидрокрекинга</li>
+                    <li>Концентрация H₂ выше 4.0% — риск образования взрывоопасной смеси</li>
+                    <li>Оптимальный диапазон: 1.5–3.0%</li>
+                </ul>
+            </div>
+            
+            <!-- Описание процесса (из исходного файла) -->
+            <div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-left: 4px solid #3498db;">
+                <p>Для поддержания реакции гидрокрекинга на заданном уровне в течение цикла необходимо постоянно повышать температуру в реакторе, поскольку активность частиц катализатора неизбежно снижается из-за оседания кокса на их поверхности. Кроме того, непрерывное уменьшение количества водорода в системе требует подведения свежего водорода (водорода подпитки).</p>
+            </div>
+            
+            <a href="ARM.ustanovka.gidrokrekinga.html" style="display: inline-block; margin-top: 20px;">Главная страница</a>
+        </div>
+    </div>
+    
+    <div id="footer">
+        <p>Contacts: viktor.petrov@pikely.ru</p>
+        <p>Copyright © Pikely.ru, 2026</p>
+    </div>
+
+    <script>
+        // Константы для границ (Таблица 14 из PDF)
+        const H2_CRITICAL_LOW = 1.0;
+        const H2_NORMAL_LOW = 1.5;
+        const H2_NORMAL_HIGH = 3.0;
+        const H2_CRITICAL_HIGH = 4.0;
+        const H2_MAX_DISPLAY = 5.0;
+        
+        // Данные для графика (последние 30 точек)
+        const maxDataPoints = 30;
+        const timeLabels = [];
+        const h2Data = [];
+        
+        // Инициализация графика
+        const ctx = document.getElementById('h2-chart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [{
+                    label: 'Концентрация H₂ (%)',
+                    data: h2Data,
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 5.5,
+                        title: {
+                            display: true,
+                            text: 'Концентрация H₂ (%)'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Время (чч:мм:сс)'
+                        }
+                    }
+                },
+                plugins: {
+                    annotation: {
+                        annotations: {}
+                    }
+                }
+            }
+        });
+
+        // Функция обновления зон на графике
+        function updateChartZones() {
+            // Очищаем старые аннотации
+            if (chart.options.plugins.annotation) {
+                chart.options.plugins.annotation.annotations = {};
+            }
+            
+            // Добавляем зоны
+            chart.options.plugins.annotation = {
+                annotations: {
+                    // Зона нормы (зелёная)
+                    zoneNormal: {
+                        type: 'box',
+                        yMin: H2_NORMAL_LOW,
+                        yMax: H2_NORMAL_HIGH,
+                        backgroundColor: 'rgba(46, 204, 113, 0.15)',
+                        borderColor: 'rgba(46, 204, 113, 0.5)',
+                        borderWidth: 1,
+                        label: {
+                            display: true,
+                            content: 'Норма',
+                            position: 'center',
+                            backgroundColor: 'rgba(46, 204, 113, 0.8)',
+                            color: 'white',
+                            font: { size: 10 }
+                        }
+                    },
+                    // Зона критически низких значений
+                    zoneCriticalLow: {
+                        type: 'box',
+                        yMin: 0,
+                        yMax: H2_CRITICAL_LOW,
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        borderColor: 'rgba(231, 76, 60, 0.3)',
+                        borderWidth: 1
+                    },
+                    // Зона критически высоких значений
+                    zoneCriticalHigh: {
+                        type: 'box',
+                        yMin: H2_CRITICAL_HIGH,
+                        yMax: H2_MAX_DISPLAY + 0.5,
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        borderColor: 'rgba(231, 76, 60, 0.3)',
+                        borderWidth: 1
+                    },
+                    // Линия критического минимума
+                    lineCriticalLow: {
+                        type: 'line',
+                        yMin: H2_CRITICAL_LOW,
+                        yMax: H2_CRITICAL_LOW,
+                        borderColor: '#e74c3c',
+                        borderWidth: 2,
+                        borderDash: [5, 5]
+                    },
+                    // Линия критического максимума
+                    lineCriticalHigh: {
+                        type: 'line',
+                        yMin: H2_CRITICAL_HIGH,
+                        yMax: H2_CRITICAL_HIGH,
+                        borderColor: '#e74c3c',
+                        borderWidth: 2,
+                        borderDash: [5, 5]
+                    }
+                }
+            };
+            chart.update();
+        }
+
+        // Симуляция текущей концентрации H2
+        function generateH2Value() {
+            const lastValue = h2Data.length > 0 ? h2Data[h2Data.length - 1] : 2.5;
+            // Имитация реалистичных колебаний
+            const change = (Math.random() - 0.5) * 0.3;
+            let newValue = lastValue + change;
+            
+            // Иногда добавляем более значительные изменения
+            if (Math.random() < 0.05) {
+                newValue += (Math.random() - 0.5) * 1.0;
+            }
+            
+            return Math.min(5.2, Math.max(0.3, newValue));
+        }
+
+        // Определение статуса концентрации H2
+        function getH2Status(value) {
+            if (value < H2_CRITICAL_LOW) return 'critical_low';
+            if (value > H2_CRITICAL_HIGH) return 'critical_high';
+            if (value < H2_NORMAL_LOW || value > H2_NORMAL_HIGH) return 'warning';
+            return 'normal';
+        }
+
+        // Обновление прогресс-бара
+        function updateProgressBar(value) {
+            const progressBar = document.getElementById('h2-progress-bar');
+            const percentage = (value / H2_MAX_DISPLAY) * 100;
+            progressBar.style.width = Math.min(100, Math.max(0, percentage)) + '%';
+        }
+
+        // Проверка и обновление индикаторов
+        function checkAndUpdateAlarms(value, status) {
+            const indicator = document.getElementById('alarm-indicator');
+            const statusBadge = document.getElementById('status-badge');
+            const h2Display = document.getElementById('current-h2');
+            
+            // Обновляем цвет цифрового индикатора
+            if (status === 'critical_low' || status === 'critical_high') {
+                h2Display.style.backgroundColor = '#ffe6e6';
+                h2Display.style.borderColor = '#e74c3c';
+            } else if (status === 'warning') {
+                h2Display.style.backgroundColor = '#fff8e6';
+                h2Display.style.borderColor = '#f39c12';
+            } else {
+                h2Display.style.backgroundColor = '#e8f8e8';
+                h2Display.style.borderColor = '#2ecc71';
+            }
+            
+            // Обновляем индикатор тревоги
+            if (status === 'critical_low') {
+                indicator.innerHTML = `<span>🚨 АВАРИЯ! КРИТИЧЕСКИ НИЗКАЯ КОНЦЕНТРАЦИЯ H₂!</span>`;
+                indicator.className = 'alarm-indicator alarm-critical';
+                statusBadge.textContent = `КРИТИЧЕСКИ НИЗКО (${value.toFixed(2)}%)`;
+                statusBadge.style.backgroundColor = '#e74c3c';
+                console.warn('🔴 ЗВУКОВАЯ СИГНАЛИЗАЦИЯ: Риск неполной реакции! Концентрация H₂ ниже 1.0%!');
+            } else if (status === 'critical_high') {
+                indicator.innerHTML = `<span>🚨 АВАРИЯ! КРИТИЧЕСКИ ВЫСОКАЯ КОНЦЕНТРАЦИЯ H₂!</span>`;
+                indicator.className = 'alarm-indicator alarm-critical';
+                statusBadge.textContent = `КРИТИЧЕСКИ ВЫСОКО (${value.toFixed(2)}%)`;
+                statusBadge.style.backgroundColor = '#e74c3c';
+                console.warn('🔴 ЗВУКОВАЯ СИГНАЛИЗАЦИЯ: Риск взрыва! Концентрация H₂ выше 4.0%!');
+            } else if (status === 'warning') {
+                indicator.innerHTML = `<span>⚠️ ВНИМАНИЕ! Концентрация H₂ вне оптимального диапазона</span>`;
+                indicator.className = 'alarm-indicator alarm-warning';
+                if (value < H2_NORMAL_LOW) {
+                    statusBadge.textContent = `НИЖЕ НОРМЫ (${value.toFixed(2)}%)`;
+                } else {
+                    statusBadge.textContent = `ВЫШЕ НОРМЫ (${value.toFixed(2)}%)`;
+                }
+                statusBadge.style.backgroundColor = '#f39c12';
+            } else {
+                indicator.innerHTML = `<span>✓ НОРМА</span>`;
+                indicator.className = 'alarm-indicator';
+                indicator.style.backgroundColor = '#2ecc71';
+                statusBadge.textContent = `В НОРМЕ (${value.toFixed(2)}%)`;
+                statusBadge.style.backgroundColor = '#2ecc71';
+            }
+        }
+
+        // Основная функция обновления данных
+        function updateH2Data() {
+            // Генерируем новое значение
+            const newValue = generateH2Value();
+            
+            // Обновляем массив данных
+            h2Data.push(newValue);
+            const now = new Date();
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            timeLabels.push(timeStr);
+            
+            // Ограничиваем количество точек
+            if (h2Data.length > maxDataPoints) {
+                h2Data.shift();
+                timeLabels.shift();
+            }
+            
+            // Обновляем цифровой индикатор
+            document.getElementById('current-h2').textContent = `${newValue.toFixed(2)}%`;
+            
+            // Обновляем прогресс-бар
+            updateProgressBar(newValue);
+            
+            // Определяем статус и обновляем индикаторы
+            const status = getH2Status(newValue);
+            checkAndUpdateAlarms(newValue, status);
+            
+            // Обновляем график
+            chart.update();
+            
+            // Логирование
+            const statusText = status === 'critical_low' ? 'низкий' : 
+                              status === 'critical_high' ? 'высокий' : 
+                              status === 'warning' ? 'предупреждение' : 'норма';
+            console.log(`[${timeStr}] H2: ${newValue.toFixed(2)}%, Статус: ${statusText}`);
+        }
+
+        // Инициализация
+        updateChartZones();
+
+        // Запускаем обновление каждые 2 секунды
+        setInterval(updateH2Data, 2000);
+        
+        // Начальное заполнение
+        for (let i = 0; i < 5; i++) {
+            updateH2Data();
+        }
+        
+        // Дополнительно: симуляция случайных критических событий для демонстрации
+        // (в реальной системе этого не должно быть)
+        setInterval(() => {
+            if (Math.random() < 0.1 && h2Data.length > 0) { // 10% шанс каждые 10 секунд
+                const lastValue = h2Data[h2Data.length - 1];
+                let crisisValue;
+                if (Math.random() < 0.5) {
+                    crisisValue = 0.7 + Math.random() * 0.3; // Критически низкое
+                } else {
+                    crisisValue = 4.2 + Math.random() * 0.5; // Критически высокое
+                }
+                // Заменяем последнее значение для демонстрации тревоги
+                h2Data[h2Data.length - 1] = crisisValue;
+                document.getElementById('current-h2').textContent = `${crisisValue.toFixed(2)}%`;
+                updateProgressBar(crisisValue);
+                const status = getH2Status(crisisValue);
+                checkAndUpdateAlarms(crisisValue, status);
+                chart.update();
+            }
+        }, 10000);
+    </script>
+</body>
+</html>
