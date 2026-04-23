@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link href="style.css" rel="stylesheet">
+    <!-- Подключение Chart.js для графиков -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <title>Контроль давления</title>
+    <style>
+        /* Дополнительные стили для элементов управления давлением */
+        .control-panel {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        .pressure-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            text-align: center;
+            border-radius: 5px;
+        }
+        .alarm-indicator {
+            width: 100%;
+            min-height: 40px;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #2ecc71;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+        .alarm-critical {
+            background-color: #e74c3c;
+            animation: blink 1s infinite;
+        }
+        .alarm-warning {
+            background-color: #f39c12;
+        }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        select {
+            padding: 8px;
+            font-size: 1em;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            margin-left: 10px;
+        }
+        .limits-info {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Контроль давления</h1>
+<div id="nav">
+    <ul>
+        <li title="Главная страница"><a href="ARM.ustanovka.gidrokrekinga.html">🏠 Главная</a></li>
+        <li title="Контроль температуры"><a href="kontrol.temperaturi.html">🌡️ Температура</a></li>
+        <li title="Контроль давления"><a href="kontrol.davlenia.html" style="font-weight: bold; background: #3498db; color: white;">⚡ Давление</a></li>
+        <li title="Контроль водорода"><a href="kontrol.vodoroda.html">💧 Водород</a></li>
+        <li title="Получение фракций"><a href="kontrol.fraction.html">📊 Фракции</a></li>
+        <li title="Контроль режимов"><a href="kontrol.regkr.html">📈 Режимы</a></li>
+        <li title="Отчёты и логирование"><a href="reports.html">📋 Отчёты</a></li>
+    </ul>
+</div>
+    
+    <div class="wrapper">
+        <div id="sidebar1" class="aside">
+            <div class="logo-sidebar">
+                <img src="financial-logo-abstract-finance-logo-vector.jpg" alt="Логотип" width="200" height="200" />
+            </div>
+        </div>
+        
+        <div id="sidebar2" class="aside">
+            <h2>В поисках сотрудников</h2>
+            <p>Мы расширяем команду и ищем ответственного и квалифицированного оператора установки гидрокрекинга!</p>
+            <h3>Требования:</h3>
+            <p>- Опыт работы на нефтеперерабатывающих предприятиях или аналогичных производствах</p>
+            <p>- Знание технологических процессов гидрокрекинга</p>
+            <p>- Умение работать с контрольно-измерительными приборами и автоматизированными системами управления</p>
+            <p>- Ответственность, внимательность, готовность работать в команде</p>
+            <h3>Условия:</h3>
+            <p>- Стабильная заработная плата (обсуждается на собеседовании)</p>
+            <p>- Официальное трудоустройство</p>
+            <p>- Возможность профессионального роста</p>
+            <p>- Социальный пакет</p>
+        </div>
+        
+        <div id="article">
+            <h2>Контроль давления в системе</h2>
+            
+            <!-- Панель управления этапом -->
+            <div class="control-panel">
+                <label for="stage-select">Этап процесса:</label>
+                <select id="stage-select">
+                    <option value="heating">Нагрев</option>
+                    <option value="reaction" selected>Реакция</option>
+                    <option value="cooling">Охлаждение</option>
+                </select>
+                <div class="limits-info">
+                    <span>Допустимый диапазон: <span id="stage-limits">3.0–4.0 МПа</span></span><br>
+                    <span style="color: #e74c3c;">Критические значения: &gt;4.2 МПа или &lt;1.3 МПа</span>
+                </div>
+            </div>
+            
+            <!-- Индикатор давления -->
+            <div class="pressure-display" id="current-pressure">--.-- МПа</div>
+            
+            <!-- Индикатор состояния -->
+            <div class="alarm-indicator" id="alarm-indicator">
+                НОРМА
+            </div>
+            
+            <!-- Контейнер для графика -->
+            <div class="chart-container">
+                <canvas id="pressure-chart"></canvas>
+            </div>
+            
+            <!-- Описание системы сброса давления (оставлено из исходного файла) -->
+            <div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-left: 4px solid #3498db;">
+                <strong>Системы сброса давления:</strong> Многие установки гидрокрекинга оснащены двумя системами сброса давления – «медленной» и «быстрой». В случае аварии первым действием оператора должна стать попытка восстановить управление процессом с помощью медленного сброса давления. Быстрый сброс давления используется, только если остановить неуправляемый нагрев иным способом невозможно.
+            </div>
+            
+            <a href="ARM.ustanovka.gidrokrekinga.html" style="display: inline-block; margin-top: 20px;">Главная страница</a>
+        </div>
+    </div>
+    
+    <div id="footer">
+        <p>Contacts: viktor.petrov@pikely.ru</p>
+        <p>Copyright © Pikely.ru, 2026</p>
+    </div>
+
+    <script>
+        // Данные для графика (последние 20 точек)
+        const maxDataPoints = 20;
+        const timeLabels = [];
+        const pressureData = [];
+        
+        // Инициализация графика
+        const ctx = document.getElementById('pressure-chart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [{
+                    label: 'Давление (МПа)',
+                    data: pressureData,
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        min: 0.5,
+                        max: 5.5,
+                        title: {
+                            display: true,
+                            text: 'Давление (МПа)'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Время (чч:мм:сс)'
+                        }
+                    }
+                },
+                plugins: {
+                    annotation: {
+                        annotations: {}
+                    }
+                }
+            }
+        });
+
+        // Функция получения границ давления по этапу (Таблица 5 из PDF)
+        function getPressureLimits(stage) {
+            switch(stage) {
+                case 'heating': return { min: 2.0, max: 3.5, color: 'rgba(241, 196, 15, 0.15)', borderColor: 'rgba(241, 196, 15, 0.5)' };
+                case 'reaction': return { min: 3.0, max: 4.0, color: 'rgba(46, 204, 113, 0.15)', borderColor: 'rgba(46, 204, 113, 0.5)' };
+                case 'cooling': return { min: 1.5, max: 2.5, color: 'rgba(52, 152, 219, 0.15)', borderColor: 'rgba(52, 152, 219, 0.5)' };
+                default: return { min: 3.0, max: 4.0, color: 'rgba(46, 204, 113, 0.15)', borderColor: 'rgba(46, 204, 113, 0.5)' };
+            }
+        }
+
+        // Обновление зон на графике
+        function updateChartZones(limits) {
+            // Очищаем старые аннотации
+            if (chart.options.plugins.annotation) {
+                chart.options.plugins.annotation.annotations = {};
+            }
+            
+            // Добавляем зону нормы для текущего этапа
+            chart.options.plugins.annotation = {
+                annotations: {
+                    zoneNormal: {
+                        type: 'box',
+                        yMin: limits.min,
+                        yMax: limits.max,
+                        backgroundColor: limits.color,
+                        borderColor: limits.borderColor,
+                        borderWidth: 1
+                    },
+                    // Красные линии критических значений
+                    lineCriticalHigh: {
+                        type: 'line',
+                        yMin: 4.2,
+                        yMax: 4.2,
+                        borderColor: '#e74c3c',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        label: {
+                            display: true,
+                            content: 'Критический максимум (4.2)',
+                            position: 'end',
+                            backgroundColor: '#e74c3c',
+                            color: 'white',
+                            font: { size: 10 }
+                        }
+                    },
+                    lineCriticalLow: {
+                        type: 'line',
+                        yMin: 1.3,
+                        yMax: 1.3,
+                        borderColor: '#e74c3c',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        label: {
+                            display: true,
+                            content: 'Критический минимум (1.3)',
+                            position: 'start',
+                            backgroundColor: '#e74c3c',
+                            color: 'white',
+                            font: { size: 10 }
+                        }
+                    }
+                }
+            };
+            chart.update();
+        }
+
+        // Обновление отображаемых лимитов
+        function updateLimitsDisplay() {
+            const stage = document.getElementById('stage-select').value;
+            const limits = getPressureLimits(stage);
+            document.getElementById('stage-limits').textContent = `${limits.min}–${limits.max} МПа`;
+            return limits;
+        }
+
+        // Симуляция текущего давления
+        function generatePressure() {
+            const lastPressure = pressureData.length > 0 ? pressureData[pressureData.length - 1] : 3.5;
+            const change = (Math.random() - 0.5) * 0.4; // Изменение от -0.2 до +0.2 МПа
+            let newPressure = lastPressure + change;
+            
+            // Ограничиваем в разумных пределах 0.5-5.5
+            return Math.min(5.5, Math.max(0.5, newPressure));
+        }
+
+        // Проверка критичности и обновление индикатора
+        function checkAlarm(currentPressure, limits) {
+            const indicator = document.getElementById('alarm-indicator');
+            
+            // Критические значения (общие для всех этапов)
+            const isCriticalHigh = currentPressure > 4.2;
+            const isCriticalLow = currentPressure < 1.3;
+            
+            // Выход за границы этапа
+            const isOutOfStageLimits = currentPressure < limits.min || currentPressure > limits.max;
+            
+            if (isCriticalHigh) {
+                indicator.textContent = `АВАРИЯ! Давление ${currentPressure.toFixed(2)} МПа превышает критическое значение 4.2 МПа (риск разрыва)!`;
+                indicator.className = 'alarm-indicator alarm-critical';
+                console.warn('Звуковой сигнал тревоги! Критически высокое давление!');
+            } else if (isCriticalLow) {
+                indicator.textContent = `АВАРИЯ! Давление ${currentPressure.toFixed(2)} МПа ниже критического значения 1.3 МПа (вакуумизация)!`;
+                indicator.className = 'alarm-indicator alarm-critical';
+                console.warn('Звуковой сигнал тревоги! Критически низкое давление!');
+            } else if (isOutOfStageLimits) {
+                indicator.textContent = `ВНИМАНИЕ! Давление вне нормы для этапа (${limits.min}–${limits.max} МПа)`;
+                indicator.className = 'alarm-indicator alarm-warning';
+            } else {
+                indicator.textContent = 'НОРМА';
+                indicator.className = 'alarm-indicator';
+                indicator.style.backgroundColor = '#2ecc71';
+            }
+        }
+
+        // Основная функция обновления данных
+        function updatePressureData() {
+            const stage = document.getElementById('stage-select').value;
+            const limits = getPressureLimits(stage);
+            
+            // Генерируем новое значение
+            const newPressure = generatePressure();
+            
+            // Обновляем массив данных
+            pressureData.push(newPressure);
+            const now = new Date();
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            timeLabels.push(timeStr);
+            
+            // Ограничиваем количество точек
+            if (pressureData.length > maxDataPoints) {
+                pressureData.shift();
+                timeLabels.shift();
+            }
+            
+            // Обновляем цифровой индикатор
+            document.getElementById('current-pressure').textContent = `${newPressure.toFixed(2)} МПа`;
+            
+            // Проверяем аварийные ситуации
+            checkAlarm(newPressure, limits);
+            
+            // Обновляем график
+            chart.update();
+            
+            // Логирование
+            const status = (newPressure > 4.2 || newPressure < 1.3) ? 'критично' : 
+                          (newPressure < limits.min || newPressure > limits.max) ? 'предупреждение' : 'норма';
+            console.log(`[${timeStr}] Этап: ${stage}, Давление: ${newPressure.toFixed(2)} МПа, Статус: ${status}`);
+        }
+
+        // Обработчик смены этапа
+        document.getElementById('stage-select').addEventListener('change', function() {
+            const limits = updateLimitsDisplay();
+            updateChartZones(limits);
+            
+            // При смене этапа проверяем текущее давление
+            if (pressureData.length > 0) {
+                const currentPressure = pressureData[pressureData.length - 1];
+                checkAlarm(currentPressure, limits);
+            }
+        });
+
+        // Инициализация
+        const initialLimits = updateLimitsDisplay();
+        updateChartZones(initialLimits);
+
+        // Запускаем обновление каждые 2 секунды
+        setInterval(updatePressureData, 2000);
+        
+        // Начальное заполнение
+        for (let i = 0; i < 5; i++) {
+            updatePressureData();
+        }
+    </script>
+</body>
+</html>

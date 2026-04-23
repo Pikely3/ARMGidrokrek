@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link href="style.css" rel="stylesheet">
+    <!-- Подключение Chart.js для графиков -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <title>Получение фракций</title>
+    <style>
+        /* Дополнительные стили для страницы фракций */
+        .fractions-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .chart-container {
+            flex: 1;
+            min-width: 300px;
+            height: 350px;
+            position: relative;
+        }
+        
+        .fractions-info {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .fraction-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
+        }
+        
+        .fraction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .fraction-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .fraction-value {
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+        
+        .fraction-target {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        .progress-bar-container {
+            width: 100%;
+            height: 20px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-normal {
+            color: #2ecc71;
+        }
+        
+        .status-warning {
+            color: #e74c3c;
+        }
+        
+        .overall-status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .status-ok {
+            background-color: #d5f5e3;
+            color: #27ae60;
+            border: 1px solid #2ecc71;
+        }
+        
+        .status-error {
+            background-color: #fadbd8;
+            color: #c0392b;
+            border: 1px solid #e74c3c;
+        }
+        
+        .control-panel {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        
+        .legend-container {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border-radius: 4px;
+        }
+        
+        .refresh-info {
+            font-size: 0.85em;
+            color: #7f8c8d;
+            margin-top: 10px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Получение фракций</h1>
+<div id="nav">
+    <ul>
+        <li title="Главная страница"><a href="ARM.ustanovka.gidrokrekinga.html">🏠 Главная</a></li>
+        <li title="Контроль температуры"><a href="kontrol.temperaturi.html">🌡️ Температура</a></li>
+        <li title="Контроль давления"><a href="kontrol.davlenia.html">⚡ Давление</a></li>
+        <li title="Контроль водорода"><a href="kontrol.vodoroda.html">💧 Водород</a></li>
+        <li title="Получение фракций"><a href="kontrol.fraction.html" style="font-weight: bold; background: #3498db; color: white;">📊 Фракции</a></li>
+        <li title="Контроль режимов"><a href="kontrol.regkr.html">📈 Режимы</a></li>
+        <li title="Отчёты и логирование"><a href="reports.html">📋 Отчёты</a></li>
+    </ul>
+</div>
+    
+    <div class="wrapper">
+        <div id="sidebar1" class="aside">
+            <div class="logo-sidebar">
+                <img src="financial-logo-abstract-finance-logo-vector.jpg" alt="Логотип" width="200" height="200" />
+            </div>
+        </div>
+        
+        <div id="sidebar2" class="aside">
+            <h2>В поисках сотрудников</h2>
+            <p>Мы расширяем команду и ищем ответственного и квалифицированного оператора установки гидрокрекинга!</p>
+            <h3>Требования:</h3>
+            <p>- Опыт работы на нефтеперерабатывающих предприятиях или аналогичных производствах</p>
+            <p>- Знание технологических процессов гидрокрекинга</p>
+            <p>- Умение работать с контрольно-измерительными приборами и автоматизированными системами управления</p>
+            <p>- Ответственность, внимательность, готовность работать в команде</p>
+            <h3>Условия:</h3>
+            <p>- Стабильная заработная плата (обсуждается на собеседовании)</p>
+            <p>- Официальное трудоустройство</p>
+            <p>- Возможность профессионального роста</p>
+            <p>- Социальный пакет</p>
+        </div>
+        
+        <div id="article">
+            <h2>Выход фракций (керосиновых и бензиновых)</h2>
+            
+            <!-- Панель с целевыми показателями -->
+            <div class="control-panel">
+                <h3 style="margin-top: 0; color: #2c3e50;">Целевые показатели выхода фракций</h3>
+                <div style="display: flex; justify-content: space-around; text-align: center;">
+                    <div>
+                        <div style="font-size: 1.1em; font-weight: bold;">Бензин</div>
+                        <div style="color: #2ecc71; font-size: 1.2em;">40–50%</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.1em; font-weight: bold;">Керосин</div>
+                        <div style="color: #2ecc71; font-size: 1.2em;">20–30%</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.1em; font-weight: bold;">Остаток</div>
+                        <div style="color: #7f8c8d; font-size: 1.2em;">≤50%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Общий статус -->
+            <div class="overall-status status-ok" id="overall-status">
+                <span>✓ ВСЕ ФРАКЦИИ В ПРЕДЕЛАХ НОРМЫ</span>
+            </div>
+            
+            <!-- Контейнер с диаграммой и информацией -->
+            <div class="fractions-container">
+                <!-- Круговая диаграмма -->
+                <div class="chart-container">
+                    <canvas id="fractions-chart"></canvas>
+                </div>
+                
+                <!-- Информация о фракциях -->
+                <div class="fractions-info">
+                    <!-- Бензин -->
+                    <div class="fraction-card" id="gasoline-card">
+                        <div class="fraction-header">
+                            <span class="fraction-name">
+                                <span class="status-indicator" id="gasoline-status"></span>
+                                Бензин
+                            </span>
+                            <span class="fraction-value" id="gasoline-value">--%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="gasoline-progress" style="width: 0%;"></div>
+                        </div>
+                        <div class="fraction-target">
+                            Целевой диапазон: 40–50%
+                            <span id="gasoline-deviation"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Керосин -->
+                    <div class="fraction-card" id="kerosene-card">
+                        <div class="fraction-header">
+                            <span class="fraction-name">
+                                <span class="status-indicator" id="kerosene-status"></span>
+                                Керосин
+                            </span>
+                            <span class="fraction-value" id="kerosene-value">--%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="kerosene-progress" style="width: 0%;"></div>
+                        </div>
+                        <div class="fraction-target">
+                            Целевой диапазон: 20–30%
+                            <span id="kerosene-deviation"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Остаток -->
+                    <div class="fraction-card" id="residue-card">
+                        <div class="fraction-header">
+                            <span class="fraction-name">
+                                <span class="status-indicator" id="residue-status"></span>
+                                Остаток
+                            </span>
+                            <span class="fraction-value" id="residue-value">--%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="residue-progress" style="width: 0%; background-color: #95a5a6;"></div>
+                        </div>
+                        <div class="fraction-target">
+                            Рассчитывается автоматически
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Легенда -->
+            <div class="legend-container">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #3498db;"></div>
+                    <span>Бензин (цель: 40–50%)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #2ecc71;"></div>
+                    <span>Керосин (цель: 20–30%)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #95a5a6;"></div>
+                    <span>Остаток</span>
+                </div>
+            </div>
+            
+            <!-- Информация об обновлении -->
+            <div class="refresh-info" id="refresh-info">
+                Последнее обновление: --:--:--
+            </div>
+            
+            <!-- Описание процесса -->
+            <div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-left: 4px solid #3498db;">
+                <p><strong>Цель процесса перегонки нефти:</strong> разделение на фракции с разными температурами кипения при минимальных энергозатратах и максимальном выходе продукта. Эффективность перегонки зависит от контакта паров, поднимающихся в верхний пояс колонны, и жидкой фракции, оседающей в нижнем поясе.</p>
+            </div>
+            
+            <a href="ARM.ustanovka.gidrokrekinga.html" style="display: inline-block; margin-top: 20px;">Главная страница</a>
+        </div>
+    </div>
+    
+    <div id="footer">
+        <p>Contacts: viktor.petrov@pikely.ru</p>
+        <p>Copyright © Pikely.ru, 2026</p>
+    </div>
+
+    <script>
+        // Целевые диапазоны (Таблица 16 из PDF)
+        const TARGETS = {
+            gasoline: { min: 40, max: 50 },
+            kerosene: { min: 20, max: 30 }
+        };
+        
+        // Текущие значения
+        let currentData = {
+            gasoline: 45,
+            kerosene: 25,
+            residue: 30
+        };
+        
+        // Инициализация круговой диаграммы
+        const ctx = document.getElementById('fractions-chart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Бензин', 'Керосин', 'Остаток'],
+                datasets: [{
+                    data: [45, 25, 30],
+                    backgroundColor: [
+                        '#3498db',  // Бензин - синий
+                        '#2ecc71',  // Керосин - зелёный
+                        '#95a5a6'   // Остаток - серый
+                    ],
+                    borderColor: '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { size: 12 },
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const label = context.label;
+                                let status = '';
+                                if (label === 'Бензин') {
+                                    status = (value >= TARGETS.gasoline.min && value <= TARGETS.gasoline.max) ? ' ✓' : ' ✗';
+                                } else if (label === 'Керосин') {
+                                    status = (value >= TARGETS.kerosene.min && value <= TARGETS.kerosene.max) ? ' ✓' : ' ✗';
+                                }
+                                return `${label}: ${value.toFixed(1)}%${status}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Функция проверки значения на соответствие норме
+        function isInRange(value, min, max) {
+            return value >= min && value <= max;
+        }
+
+        // Функция обновления статуса фракции
+        function updateFractionStatus(type, value) {
+            const statusIndicator = document.getElementById(`${type}-status`);
+            const card = document.getElementById(`${type}-card`);
+            const deviation = document.getElementById(`${type}-deviation`);
+            
+            let isNormal = false;
+            let targetMin, targetMax;
+            
+            if (type === 'gasoline') {
+                targetMin = TARGETS.gasoline.min;
+                targetMax = TARGETS.gasoline.max;
+                isNormal = isInRange(value, targetMin, targetMax);
+            } else if (type === 'kerosene') {
+                targetMin = TARGETS.kerosene.min;
+                targetMax = TARGETS.kerosene.max;
+                isNormal = isInRange(value, targetMin, targetMax);
+            } else {
+                // Остаток всегда считается нормальным
+                statusIndicator.style.backgroundColor = '#95a5a6';
+                return true;
+            }
+            
+            if (isNormal) {
+                statusIndicator.style.backgroundColor = '#2ecc71';
+                card.style.borderLeftColor = '#2ecc71';
+                deviation.textContent = ' ✓ В норме';
+                deviation.style.color = '#2ecc71';
+            } else {
+                statusIndicator.style.backgroundColor = '#e74c3c';
+                card.style.borderLeftColor = '#e74c3c';
+                if (value < targetMin) {
+                    deviation.textContent = ` ▼ Ниже нормы на ${(targetMin - value).toFixed(1)}%`;
+                } else {
+                    deviation.textContent = ` ▲ Выше нормы на ${(value - targetMax).toFixed(1)}%`;
+                }
+                deviation.style.color = '#e74c3c';
+            }
+            
+            return isNormal;
+        }
+
+        // Функция обновления прогресс-бара
+        function updateProgressBar(type, value) {
+            const progressBar = document.getElementById(`${type}-progress`);
+            let percentage = value;
+            
+            if (type === 'gasoline') {
+                progressBar.style.width = Math.min(100, value) + '%';
+                progressBar.style.backgroundColor = isInRange(value, TARGETS.gasoline.min, TARGETS.gasoline.max) ? '#2ecc71' : '#e74c3c';
+            } else if (type === 'kerosene') {
+                progressBar.style.width = Math.min(100, value) + '%';
+                progressBar.style.backgroundColor = isInRange(value, TARGETS.kerosene.min, TARGETS.kerosene.max) ? '#2ecc71' : '#e74c3c';
+            } else {
+                progressBar.style.width = Math.min(100, value) + '%';
+            }
+        }
+
+        // Функция обновления общего статуса
+        function updateOverallStatus(gasolineNormal, keroseneNormal) {
+            const overallStatus = document.getElementById('overall-status');
+            
+            if (gasolineNormal && keroseneNormal) {
+                overallStatus.className = 'overall-status status-ok';
+                overallStatus.innerHTML = '<span>✓ ВСЕ ФРАКЦИИ В ПРЕДЕЛАХ НОРМЫ</span>';
+            } else {
+                overallStatus.className = 'overall-status status-error';
+                let errorMsg = '⚠️ ВНИМАНИЕ! Отклонение от нормы: ';
+                if (!gasolineNormal && !keroseneNormal) {
+                    errorMsg += 'бензин и керосин';
+                } else if (!gasolineNormal) {
+                    errorMsg += 'бензин';
+                } else {
+                    errorMsg += 'керосин';
+                }
+                overallStatus.innerHTML = `<span>${errorMsg}</span>`;
+            }
+        }
+
+        // Функция генерации новых значений фракций
+        function generateFractionsData() {
+            // Генерируем бензин с тенденцией к целевому диапазону
+            let gasoline = currentData.gasoline;
+            const gasolineChange = (Math.random() - 0.5) * 3;
+            gasoline += gasolineChange;
+            
+            // Генерируем керосин
+            let kerosene = currentData.kerosene;
+            const keroseneChange = (Math.random() - 0.5) * 2;
+            kerosene += keroseneChange;
+            
+            // Иногда добавляем более значительные изменения
+            if (Math.random() < 0.05) {
+                gasoline += (Math.random() - 0.5) * 8;
+                kerosene += (Math.random() - 0.5) * 6;
+            }
+            
+            // Ограничиваем значения
+            gasoline = Math.min(65, Math.max(25, gasoline));
+            kerosene = Math.min(40, Math.max(10, kerosene));
+            
+            // Корректируем, чтобы сумма не превышала 100%
+            let sum = gasoline + kerosene;
+            if (sum > 95) {
+                gasoline = gasoline * 95 / sum;
+                kerosene = kerosene * 95 / sum;
+            }
+            
+            const residue = 100 - gasoline - kerosene;
+            
+            return {
+                gasoline: Math.round(gasoline * 10) / 10,
+                kerosene: Math.round(kerosene * 10) / 10,
+                residue: Math.round(residue * 10) / 10
+            };
+        }
+
+        // Основная функция обновления данных
+        function updateFractionsData() {
+            // Генерируем новые данные
+            const newData = generateFractionsData();
+            currentData = newData;
+            
+            // Обновляем цифровые индикаторы
+            document.getElementById('gasoline-value').textContent = `${newData.gasoline.toFixed(1)}%`;
+            document.getElementById('kerosene-value').textContent = `${newData.kerosene.toFixed(1)}%`;
+            document.getElementById('residue-value').textContent = `${newData.residue.toFixed(1)}%`;
+            
+            // Обновляем статусы
+            const gasolineNormal = updateFractionStatus('gasoline', newData.gasoline);
+            const keroseneNormal = updateFractionStatus('kerosene', newData.kerosene);
+            updateFractionStatus('residue', newData.residue);
+            
+            // Обновляем прогресс-бары
+            updateProgressBar('gasoline', newData.gasoline);
+            updateProgressBar('kerosene', newData.kerosene);
+            updateProgressBar('residue', newData.residue);
+            
+            // Обновляем общий статус
+            updateOverallStatus(gasolineNormal, keroseneNormal);
+            
+            // Обновляем диаграмму
+            chart.data.datasets[0].data = [newData.gasoline, newData.kerosene, newData.residue];
+            chart.update();
+            
+            // Обновляем время последнего обновления
+            const now = new Date();
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            document.getElementById('refresh-info').textContent = `Последнее обновление: ${timeStr}`;
+            
+            // Логирование
+            console.log(`[${timeStr}] Бензин: ${newData.gasoline.toFixed(1)}%, Керосин: ${newData.kerosene.toFixed(1)}%, Остаток: ${newData.residue.toFixed(1)}%`);
+        }
+
+        // Запускаем периодическое обновление (каждые 3 секунды)
+        setInterval(updateFractionsData, 3000);
+        
+        // Начальная инициализация
+        updateFractionsData();
+        
+        // Демонстрация отклонений (для тестирования)
+        let demoMode = false;
+        let demoInterval;
+        
+        // Раскомментируйте для демонстрации режима с отклонениями
+        /*
+        demoMode = true;
+        let cycleCount = 0;
+        demoInterval = setInterval(() => {
+            cycleCount++;
+            if (cycleCount % 5 === 0) {
+                // Создаём отклонение
+                if (Math.random() < 0.5) {
+                    currentData.gasoline = 35 + Math.random() * 5;
+                } else {
+                    currentData.kerosene = 15 + Math.random() * 5;
+                }
+                const residue = 100 - currentData.gasoline - currentData.kerosene;
+                currentData.residue = Math.round(residue * 10) / 10;
+                
+                document.getElementById('gasoline-value').textContent = `${currentData.gasoline.toFixed(1)}%`;
+                document.getElementById('kerosene-value').textContent = `${currentData.kerosene.toFixed(1)}%`;
+                document.getElementById('residue-value').textContent = `${currentData.residue.toFixed(1)}%`;
+                
+                const gasolineNormal = updateFractionStatus('gasoline', currentData.gasoline);
+                const keroseneNormal = updateFractionStatus('kerosene', currentData.kerosene);
+                updateOverallStatus(gasolineNormal, keroseneNormal);
+                
+                chart.data.datasets[0].data = [currentData.gasoline, currentData.kerosene, currentData.residue];
+                chart.update();
+            }
+        }, 15000);
+        */
+    </script>
+</body>
+</html>
